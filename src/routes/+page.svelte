@@ -91,7 +91,11 @@
 				</p>
 
 				<div class="mt-12 flex flex-col gap-4 sm:flex-row">
-					<Button size="lg" class="group relative overflow-hidden bg-primary px-8 py-6 text-lg">
+					<Button
+						size="lg"
+						onclick={() => (window.location.href = '/new')}
+						class="group relative overflow-hidden bg-primary px-8 py-6 text-lg"
+					>
 						<span class="relative z-10">Create Your First Design</span>
 						<div
 							class="hero-gradient absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
