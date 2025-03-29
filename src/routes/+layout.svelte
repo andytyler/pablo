@@ -1,6 +1,11 @@
 <script lang="ts">
+	import { ModeWatcher } from 'mode-watcher';
 	import '../app.css';
+
 	let { children } = $props();
 </script>
 
-{@render children()}
+<ModeWatcher />
+<div class="min-h-screen bg-background text-foreground">
+	{@render children()}
+</div>
