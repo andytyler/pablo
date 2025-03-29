@@ -6,7 +6,7 @@ export const openai = new OpenAI({
 });
 
 // Specify the model that supports vision capabilities
-export const VISION_MODEL = 'gpt-4-vision-preview';
+export const VISION_MODEL = 'gpt-4o-mini';
 
 // Helper function to format messages for vision-enabled chat
 export function formatMessageWithImage(

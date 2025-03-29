@@ -48,12 +48,10 @@ export function useChat({ api, initialMessages = [], initialInput = '', onError 
 		addUserMessage(userPrompt);
 
 		try {
-			// Prepare the messages to send
+			// Prepare the messages to send (without IDs)
 			let messagesList: { role: string; content: string }[] = [];
-			messages.update((msgs) => {
-				messagesList = msgs.map((msg) => ({ role: msg.role, content: msg.content }));
-				return msgs;
-			});
+			const currentMessages = get(messages);
+			messagesList = currentMessages.map((msg) => ({ role: msg.role, content: msg.content }));
 
 			// Make the API call
 			const response = await fetch(api, {
@@ -72,24 +70,15 @@ export function useChat({ api, initialMessages = [], initialInput = '', onError 
 				throw new Error(`API error: ${response.status}`);
 			}
 
-			// Handle streaming response
-			const reader = response.body?.getReader();
-			if (!reader) throw new Error('Response body is null');
+			// Parse the JSON response
+			const data = await response.json();
 
-			let assistantResponse = '';
-
-			// Read the stream chunks
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				// Decode the chunk and append to the response
-				const chunk = new TextDecoder().decode(value);
-				assistantResponse += chunk;
+			if (data.error) {
+				throw new Error(data.error);
 			}
 
 			// Add the assistant's response to the conversation
-			addAssistantMessage(assistantResponse);
+			addAssistantMessage(data.message);
 
 			// Clear the input
 			input.set('');
