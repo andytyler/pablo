@@ -25,6 +25,30 @@ npm run dev
 npm run dev -- --open
 ```
 
+## Features
+
+### Chat and Message Visibility
+
+The application displays all messages in the chat interface, including:
+
+- **User Messages**: Messages sent by users
+- **Assistant Messages**: Responses from the AI
+- **System Messages**: Status updates, errors, and raw API data
+
+All messages are displayed in the main chat view with appropriate styling:
+- User messages appear right-aligned with a primary color background
+- Assistant messages appear left-aligned with a muted background
+- System messages appear centered with a yellow/amber background
+
+### Message Logging
+
+The application has a built-in system for logging AI messages and responses. This is useful for debugging and understanding how the AI is responding to user inputs.
+
+- **Console Logging**: All messages are logged to the browser console with color coding (blue for user, green for assistant, orange for system).
+- **Storage Logging**: Messages can also be stored in localStorage for persistence across sessions.
+- **LogViewer Component**: A floating UI component is available by clicking the log icon in the bottom-right corner of the screen, allowing you to view and manage logs.
+- **Raw API Data**: The application logs and displays raw API request/response data for full transparency.
+
 ## Building
 
 To create a production version of your app:

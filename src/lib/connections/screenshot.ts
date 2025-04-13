@@ -1,16 +1,23 @@
 /**
- * Captures a screenshot of a design element and returns it as a base64 encoded string
+ * Captures a screenshot of a design element, uploads it to Supabase storage, and returns the public URL
  * @param designSelector - CSS selector for the design element to capture
- * @returns Promise that resolves to a base64 encoded string of the image, or null if capture fails
+ * @returns Promise that resolves to an object containing the image URL or error
  */
-export async function captureCanvasScreenshot(designSelector: string): Promise<string | null> {
+import { getImageUrl, uploadImage } from './supabase';
+
+export async function captureCanvasScreenshot(
+	designSelector: string
+): Promise<{ url: string | null; error: Error | null }> {
 	try {
 		// Get the design element
 		const designElement = document.querySelector(designSelector);
 
 		if (!designElement) {
-			console.error('Design element not found with selector:', designSelector);
-			return null;
+			console.error('📸 [screenshot] Design element not found with selector:', designSelector);
+			return {
+				url: null,
+				error: new Error(`Design element not found with selector: ${designSelector}`)
+			};
 		}
 
 		// Use html2canvas to capture HTML element as an image
@@ -23,15 +30,33 @@ export async function captureCanvasScreenshot(designSelector: string): Promise<s
 			useCORS: true
 		});
 
-		// Convert to base64 image data URL
-		const dataUrl = canvas.toDataURL('image/png');
+		// Convert canvas to blob
+		const blob = await new Promise<Blob>((resolve) => {
+			canvas.toBlob((blob) => {
+				resolve(blob as Blob);
+			}, 'image/png');
+		});
 
-		// Extract the base64 part by removing the data URL prefix
-		const base64Image = dataUrl.split(',')[1];
+		// Create a File object with a unique name using timestamp
+		const timestamp = new Date().getTime();
+		const filename = `canvas_screenshot_${timestamp}.png`;
+		const imageFile = new File([blob], filename, { type: 'image/png' });
+		console.log('📸 [screenshot] Uploading screenshot:', filename);
 
-		return base64Image;
+		// Upload to Supabase
+		const { data, error: uploadError } = await uploadImage(imageFile);
+
+		if (uploadError) {
+			console.error('📸 [screenshot] Error uploading screenshot:', uploadError);
+			return { url: null, error: uploadError };
+		}
+
+		// Get the public URL
+		const { url, error } = await getImageUrl(filename);
+
+		return { url, error };
 	} catch (error) {
-		console.error('Error capturing design screenshot:', error);
-		return null;
+		console.error('📸 [screenshot] Error capturing or uploading design screenshot:', error);
+		return { url: null, error: error instanceof Error ? error : new Error(String(error)) };
 	}
 }
