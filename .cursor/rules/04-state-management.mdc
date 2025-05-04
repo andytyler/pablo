@@ -1,0 +1,21 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# State Management
+
+Pablo uses Svelte stores for state management. The main stores are:
+
+## HTML Store
+The HTML store manages the state of the design, including the HTML content and artboard dimensions.
+
+Key properties:
+- `content` - The HTML content to render
+- `artboard_width` - Width of the artboard
+- `artboard_height` - Height of the artboard
+- `design_json` - The structured JSON representation of the design
+- `design_concept` - The design concept generated from the user prompt
+
+## Local Storage
+Some components like `VisionChat` use local storage to persist chat history between sessions.

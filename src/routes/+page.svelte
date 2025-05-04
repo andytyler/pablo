@@ -56,10 +56,10 @@
 		</div>
 
 		<nav class="hidden items-center gap-6 md:flex">
-			<a href="#features" class="text-sm font-medium hover:text-primary">Features</a>
-			<a href="#testimonials" class="text-sm font-medium hover:text-primary">Testimonials</a>
-			<a href="#pricing" class="text-sm font-medium hover:text-primary">Pricing</a>
-			<a href="#contact" class="text-sm font-medium hover:text-primary">Contact</a>
+			<a href="/" class="text-sm font-medium hover:text-primary">Features</a>
+			<a href="/" class="text-sm font-medium hover:text-primary">Testimonials</a>
+			<a href="/" class="text-sm font-medium hover:text-primary">Pricing</a>
+			<a href="/" class="text-sm font-medium hover:text-primary">Contact</a>
 		</nav>
 
 		<div class="flex items-center gap-2">
@@ -527,18 +527,18 @@
 						<li>
 							<a href="#features" class="text-muted-foreground hover:text-primary">Features</a>
 						</li>
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Use Cases</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Use Cases</a></li>
 						<li><a href="#pricing" class="text-muted-foreground hover:text-primary">Pricing</a></li>
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Gallery</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Gallery</a></li>
 					</ul>
 				</div>
 
 				<div>
 					<h3 class="mb-4 text-lg font-semibold">Company</h3>
 					<ul class="space-y-2">
-						<li><a href="#" class="text-muted-foreground hover:text-primary">About</a></li>
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Careers</a></li>
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Blog</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">About</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Careers</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Blog</a></li>
 						<li>
 							<a
 								href={`mailto:${site_config.contact.email}`}
@@ -551,15 +551,15 @@
 				<div>
 					<h3 class="mb-4 text-lg font-semibold">Resources</h3>
 					<ul class="space-y-2">
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Documentation</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Documentation</a></li>
 						<li>
 							<a
 								href={`mailto:${site_config.contact.support}`}
 								class="text-muted-foreground hover:text-primary">Help Center</a
 							>
 						</li>
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Tutorials</a></li>
-						<li><a href="#" class="text-muted-foreground hover:text-primary">Community</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Tutorials</a></li>
+						<li><a href="/" class="text-muted-foreground hover:text-primary">Community</a></li>
 					</ul>
 				</div>
 			</div>
@@ -572,9 +572,9 @@
 					{site_config.site_name}. All rights reserved.
 				</p>
 				<div class="flex gap-6">
-					<a href="#" class="text-sm text-muted-foreground hover:text-primary">Privacy Policy</a>
-					<a href="#" class="text-sm text-muted-foreground hover:text-primary">Terms of Service</a>
-					<a href="#" class="text-sm text-muted-foreground hover:text-primary">Cookie Policy</a>
+					<a href="/" class="text-sm text-muted-foreground hover:text-primary">Privacy Policy</a>
+					<a href="/" class="text-sm text-muted-foreground hover:text-primary">Terms of Service</a>
+					<a href="/" class="text-sm text-muted-foreground hover:text-primary">Cookie Policy</a>
 				</div>
 			</div>
 		</div>

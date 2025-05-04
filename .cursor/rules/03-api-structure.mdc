@@ -1,0 +1,21 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# API Structure
+
+Pablo's backend is built with SvelteKit's API routes. The main API endpoints are:
+
+## Design Generation
+
+- [src/routes/api/generate-design/+server.ts](mdc:src/routes/api/generate-design/+server.ts) - Generates HTML designs from text prompts
+  - Takes text prompts, current design state, and artboard dimensions
+  - Returns structured design data and HTML for rendering
+
+## External Services
+
+Pablo connects to multiple AI services for design generation through the connections library:
+
+- `$lib/connections/design.ts` - Functions for design generation and processing
+- `$lib/connections/screenshot.ts` - Functions for capturing screenshots of the current design

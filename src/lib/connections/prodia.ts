@@ -1,5 +1,5 @@
 import { createProdia } from 'prodia/v2';
-import type { ImageItem } from './design';
+import type { ImageItem } from '../../routes/api/generate-design/step1/design';
 import { getImageUrl, uploadImage } from './supabase';
 /**
  * Interface with the Prodia API to generate images using the official SDK
@@ -15,7 +15,7 @@ export async function generateImageFromItem(
 	});
 
 	try {
-		const { description, width, height, src, colors, objects, mood, composition, style } = item;
+		const { description, width, height, colors, objects, mood, composition, style } = item;
 		const prompt = `A ${width}x${height} image. ${description}. With ${colors} colors, ${objects} objects, ${mood} mood, ${composition} composition, ${style} style`;
 		// Create a job with the SDK using v2 API
 		const job = await prodia.job({

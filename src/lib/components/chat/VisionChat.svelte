@@ -1,30 +1,23 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import * as ScrollArea from '$lib/components/ui/scroll-area';
+	import type { StructuredDesign } from '../../../routes/api/generate-design/step1/design';
 	import { captureCanvasScreenshot } from '$lib/connections/screenshot';
-	import { htmlStore } from '$lib/stores/htmlStore';
+	import { artboardStore } from '$lib/stores/artboard-store.svelte';
 	import AlertTriangle from '@lucide/svelte/icons/alert-triangle';
-	import InfoIcon from '@lucide/svelte/icons/info';
+	import Ban from '@lucide/svelte/icons/ban';
+	import Lightbulb from '@lucide/svelte/icons/lightbulb';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import Paintbrush from '@lucide/svelte/icons/paintbrush';
 	import { onMount } from 'svelte';
 	import { Button } from '../ui/button';
 	import { Textarea } from '../ui/textarea';
 	// Props using Svelte 5 syntax
-	let {
-		canvasSelector = '#design-canvas',
-		placeholder = 'Ask something about your design...',
-		canvasWidth = 500,
-		canvasHeight = 700
-	} = $props();
+	let { canvasSelector = '#design-canvas', placeholder = 'Ask something about your design...' } =
+		$props();
 
-	// Types
-	type Message = {
-		id: string;
-		role: 'user' | 'assistant' | 'system';
-		content: string | any;
-		timestamp: Date;
-	};
+	import type { Design, DesignItem, Message } from '$lib/types';
+	import ChatMessage from './ChatMessage.svelte';
 
 	// State using Svelte 5 runes
 	let messages = $state<Message[]>([]);
@@ -34,6 +27,15 @@
 	let generationError = $state('');
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
+	let processingImageCount = $state(0);
+	let totalImagesToProcess = $state(0);
+	let designId = $state<string | null>(null);
+	let processedImageItems = $state<Map<string, DesignItem>>(new Map());
+	// Store the current design JSON as an object (not a string)
+	let designJson = $state<Design | null>(null);
+
+	// Track when we're actively updating images to prevent recursive updates
+	let isUpdatingImages = $state(false);
 
 	// Scroll to bottom whenever messages change or component mounts
 	function scrollToBottom() {
@@ -52,8 +54,42 @@
 		}
 	});
 
+	// const html_content = $derived(
+	// 	artboardStore.image_enriched_design_json
+	// 		? imageEnrichedDesignJsonToHtml(artboardStore.image_enriched_design_json)
+	// 		: ''
+	// );
+
 	onMount(() => {
 		scrollToBottom();
+
+		// Load chat settings from localStorage if available
+		if (browser) {
+			const storedSettings = localStorage.getItem('chat_settings');
+			if (storedSettings) {
+				try {
+					const settings = JSON.parse(storedSettings);
+					artboardStore.chatSettings = {
+						...artboardStore.chatSettings,
+						...settings
+					};
+				} catch (error) {
+					console.error('Failed to parse stored chat settings:', error);
+				}
+			}
+			const promptTextarea = document.getElementById('prompt-textarea');
+			if (promptTextarea) {
+				promptTextarea.focus();
+				promptTextarea.addEventListener('keydown', function (e) {
+					if (!(e.key === 'Enter' && (e.metaKey || e.ctrlKey))) return;
+
+					if (e.target && 'form' in e.target) {
+						const formElement = e.target.form as HTMLFormElement;
+						formElement?.submit(); // or formElement?.requestSubmit() depending on your usecase
+					}
+				});
+			}
+		}
 	});
 
 	// Initialize from localStorage
@@ -84,15 +120,22 @@
 		}
 	});
 
+	// Save chat settings to localStorage whenever they change
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('chat_settings', JSON.stringify(artboardStore.chatSettings));
+		}
+	});
+
 	// Helper functions
 	function generateId() {
 		return Math.random().toString(36).substring(2, 10);
 	}
 
-	function addMessage(role: Message['role'], content: string | any) {
+	function addMessage(chat_role: Message['chat_role'], content: Message['content']) {
 		const message: Message = {
 			id: generateId(),
-			role,
+			chat_role: chat_role,
 			content,
 			timestamp: new Date()
 		};
@@ -107,173 +150,305 @@
 		messages = [];
 	}
 
-	// Function to generate HTML from text prompt
-	async function generateDesign() {
+	// Function to generate design using the two-step approach with separate endpoints
+	async function executeDessignPipeline() {
 		if (!prompt.trim()) {
 			console.error('No prompt provided');
+			addMessage('info', [{ type: 'text', text: 'No prompt provided' }]);
 			return;
 		}
 
 		isGeneratingHTML = true;
 		generationError = '';
+		processedImageItems.clear();
+		designId = null;
+		designJson = null;
 
 		try {
 			// Capture the current design state as a screenshot
-			const { url, error } = await captureCanvasScreenshot(canvasSelector);
+			const { url: canvasScreenshotUrl, error } = await captureCanvasScreenshot(canvasSelector);
 
-			if (error) {
-				throw new Error(error.message);
+			if (error || !canvasScreenshotUrl) {
+				throw new Error(error?.message || 'Failed to capture canvas screenshot');
 			}
 
-			addMessage('user', `${prompt}`);
-			// Add a system message for logging the HTML generation request
-			addMessage('system', 'Generating design...');
+			addMessage('image', [
+				{ type: 'image_url', image_url: { url: canvasScreenshotUrl, detail: 'high' } }
+			]);
 
-			// Call the HTML generation API with the prompt, current HTML and screenshot
-			const response = await fetch('/api/generate-design', {
+			addMessage('user', [{ type: 'text', text: prompt }]);
+
+			// Set initial loading state
+			artboardStore.isLoading = true;
+
+			// Step 1: Get design JSON with image placeholders
+			addMessage('info', [{ type: 'text', text: 'Step 1: Generating design structure...' }]);
+
+			const designResponse = await fetch('/api/generate-design/step1', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
 					prompt: prompt.trim(),
-					image_url: url,
-					design_json: $htmlStore.design_json,
-					current_html: $htmlStore.content,
-					artboard_size: `width: ${canvasWidth}px, height: ${canvasHeight}px`
+					image_url: canvasScreenshotUrl,
+					previous_design_json:
+						typeof artboardStore.design_json === 'string'
+							? artboardStore.design_json
+							: JSON.stringify(artboardStore.design_json || '{}'),
+					artboard_size: `width: ${artboardStore.artboard_width}px, height: ${artboardStore.artboard_height}px`,
+					skip_concept: artboardStore.chatSettings.skip_concept,
+					uploadedImages: artboardStore.uploadedImages,
+					existingImages: artboardStore.allImages
 				})
 			});
-			// Clear the prompt
+
+			if (!designResponse.ok) {
+				const errorData = await designResponse.json();
+				console.error('Failed to generate design structure:', errorData);
+				throw new Error(errorData.error || 'Failed to generate design structure');
+			}
+
+			let step_one_response: {
+				design_json: StructuredDesign;
+				design_generation_id: string;
+				step_one_concept: string;
+			} = await designResponse.json();
+			console.log('step1Response', step_one_response);
+
+			artboardStore.design_json = JSON.stringify(step_one_response.design_json);
+			artboardStore.design_concept = step_one_response.step_one_concept;
+			artboardStore.current_generation_id = step_one_response.design_generation_id;
+			artboardStore.artboard_height = step_one_response.design_json.artboard.height;
+			artboardStore.artboard_width = step_one_response.design_json.artboard.width;
+
+			// Check if any image items reference existing image IDs
+			step_one_response.design_json.items = step_one_response.design_json.items.map((item: any) => {
+				// If this is an image item with an imageId that exists in our existing images
+				if (
+					item.item &&
+					typeof item.item === 'object' &&
+					'id' in item.item &&
+					item.item.id &&
+					artboardStore.allImages[item.item.id]
+				) {
+					const existingImage = artboardStore.allImages[item.item.id];
+					// Update with information from the existing image
+					return {
+						...item,
+						item: {
+							id: item.item.id,
+							url: existingImage.url,
+							description: existingImage.description
+						}
+					};
+				}
+
+				return item;
+			});
+
+			artboardStore.image_enriched_design_json = step_one_response.design_json;
+
+			if (step_one_response.design_concept) {
+				addMessage('assistant', [{ type: 'text', text: step_one_response.design_concept }]);
+			}
+
+			addMessage('system', [
+				{ type: 'text', text: 'Design structure created. Generating images...' }
+			]);
+
+			// Step 2: Process images in parallel
+			if (artboardStore.image_enriched_design_json) {
+				// First, extract items that need image processing
+				const itemsNeedingImages = artboardStore.image_enriched_design_json.items.filter(
+					(item) =>
+						item.item &&
+						// Check if src exists and is falsy, or doesn't exist at all
+						(('src' in item.item && !item.item.src) || !('src' in item.item))
+				);
+
+				totalImagesToProcess = itemsNeedingImages.length;
+				processingImageCount = 0;
+
+				// Process images in parallel
+				const imagePromises = itemsNeedingImages.map(async (imageItem) => {
+					try {
+						const imageResponse = await fetch('/api/generate-design/image-pipeline', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								image_item: imageItem
+							})
+						});
+
+						if (!imageResponse.ok) {
+							const errorData = await imageResponse.json();
+							console.error(`Failed to process image: ${errorData.error}`);
+							processingImageCount++;
+							return null;
+						}
+
+						const imageData = await imageResponse.json();
+						console.log('imageData', imageData);
+
+						// Safely update the store with an immutable update pattern
+						if (artboardStore.image_enriched_design_json) {
+							// Set flag to prevent effect from running during update
+							isUpdatingImages = true;
+
+							// Create a new items array with the updated item
+							const updatedItems = artboardStore.image_enriched_design_json.items.map((item) =>
+								item.item &&
+								'id' in item.item &&
+								imageData.image_id &&
+								item.item.id === imageData.image_id
+									? {
+											...item,
+											item: {
+												id: imageData.image_id,
+												url: imageData.image_url,
+												description: imageData.image_description
+											}
+										}
+									: item
+							);
+
+							// Update the store with a new object reference
+							artboardStore.image_enriched_design_json = {
+								...artboardStore.image_enriched_design_json,
+								items: updatedItems
+							};
+
+							// Clear flag after update
+							isUpdatingImages = false;
+						}
+
+						processingImageCount++;
+						return imageData;
+					} catch (err) {
+						console.error('Error processing image:', err);
+						processingImageCount++;
+						return null;
+					}
+				});
+
+				// Wait for all image processing to complete
+				await Promise.all(imagePromises);
+			}
+
+			// Clear the prompt and complete
 			prompt = '';
-
-			const data = await response.json();
-			console.log('[generate-html] 🈂️ 4 RAW HTML Response from API:', data);
-
-			if (!response.ok || data.error) {
-				throw new Error(data.error || 'Failed to generate HTML');
-			}
-
-			// Update the HTML store directly
-			if (data && data.html) {
-				addMessage('assistant', data.design_concept);
-				console.log('[VisionChat] Current HTML store content:', $htmlStore.content);
-				console.log('[VisionChat] New HTML content to set:', data.html);
-				$htmlStore.content = data.html;
-				$htmlStore.design_concept = data.design_concept;
-				$htmlStore.design_json = data.design_json_processed;
-				console.log('[VisionChat] Updated HTML store content:', $htmlStore.content);
-			} else {
-				throw new Error('Generated HTML response is missing or invalid');
-			}
+			artboardStore.isLoading = false;
+			addMessage('system', [{ type: 'text', text: 'Design created successfully!' }]);
 		} catch (e) {
-			console.error('Error generating HTML:', e);
-			generationError = e instanceof Error ? e.message : 'Failed to generate HTML';
-			addMessage('system', `HTML generation failed: ${generationError}`);
+			console.error('Error generating design:', e);
+			generationError = e instanceof Error ? e.message : 'Failed to generate design';
+			addMessage('error', [{ type: 'text', text: `Design generation failed: ${generationError}` }]);
+			artboardStore.isLoading = false;
 		} finally {
 			isGeneratingHTML = false;
 		}
 	}
 </script>
 
-<div class="relative h-full overflow-hidden bg-white">
-	<div class="relative flex h-[calc(100vh-300px)] flex-col">
-		<!-- Messages area with ScrollArea -->
-		<ScrollArea.Root class="flex-1 px-2" id="scroll-area">
-			{#each messages as message (message.id)}
-				{#if message.role === 'system'}
-					<!-- System message style -->
-					<div class="flex flex-col items-center">
-						<div class="max-w-[85%] rounded-lg bg-gray-100 p-1 text-center dark:bg-gray-600">
-							<div class="flex items-center justify-center gap-1">
-								<InfoIcon class="h-4 w-4" />
-								<span class="text-xs">
-									{typeof message.content === 'string'
-										? message.content
-										: JSON.stringify(message.content)}
-								</span>
-							</div>
-						</div>
-						<div class="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-							<span>System</span>
-							<span>•</span>
-							<span>{message.timestamp.toLocaleString()}</span>
-						</div>
-					</div>
-				{:else}
-					<!-- User or Assistant message style -->
-					<div class="flex flex-col {message.role === 'user' ? 'items-end' : 'items-start'}">
-						<div
-							class="max-w-[85%] rounded-lg p-3 {message.role === 'user'
-								? 'bg-primary text-primary-foreground'
-								: 'bg-muted'}"
-						>
-							{typeof message.content === 'string'
-								? message.content
-								: JSON.stringify(message.content)}
-						</div>
-						<div
-							class="mt-1 flex items-center gap-2 text-xs text-muted-foreground {message.role ===
-							'user'
-								? 'justify-end'
-								: ''}"
-						>
-							<span>{message.role === 'user' ? 'You' : 'AI Assistant'}</span>
-							<span>•</span>
-							<span>{message.timestamp.toLocaleString()}</span>
-						</div>
-					</div>
-				{/if}
-			{/each}
+<div class="relative h-full overflow-hidden bg-card">
+	<!-- Messages area with ScrollArea -->
+	<ScrollArea.Root
+		class="relative flex h-[calc(100vh-250px)] flex-1 flex-col px-2"
+		id="scroll-area"
+	>
+		{#each messages as message (message.id)}
+			<ChatMessage {message} />
+		{/each}
 
-			{#if isLoading || isCapturingImage || isGeneratingHTML}
-				<div class="flex justify-center py-4">
-					<Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
-				</div>
-			{/if}
+		{#if isLoading || isCapturingImage || isGeneratingHTML}
+			<div class="flex justify-center py-4">
+				<Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		{/if}
 
-			{#if error || generationError}
-				<div class="rounded-md bg-destructive/10 p-3 text-destructive">
-					<div class="flex items-center gap-2">
-						<AlertTriangle class="h-4 w-4" />
-						<span>Error: {error || generationError}</span>
-					</div>
+		{#if error || generationError}
+			<div class="rounded-md bg-destructive/10 p-3 text-destructive">
+				<div class="flex items-center gap-2">
+					<AlertTriangle class="h-4 w-4" />
+					<span>Error: {error || generationError}</span>
 				</div>
-			{/if}
-			<ScrollArea.Scrollbar orientation="vertical" />
-		</ScrollArea.Root>
-	</div>
+			</div>
+		{/if}
+		<ScrollArea.Scrollbar orientation="vertical" />
+	</ScrollArea.Root>
 
 	<!-- Input area - fixed at bottom of container -->
-	<div class="m-4h-full relative bottom-0 left-0 right-0 flex-1 px-4">
-		<form
-			onsubmit={(e) => {
-				generateDesign();
-				if ((e as any).metaKey || (e as any).ctrlKey) {
-				}
-			}}
-			class="flex flex-col gap-4"
-		>
-			<Textarea
-				bind:value={prompt}
-				{placeholder}
-				class="resize-vertical h-32 min-h-24  rounded border-2 border-border bg-background p-1 text-sm focus:border-background focus:outline-none focus:ring-2 focus:ring-primary"
-				disabled={isLoading || isCapturingImage || isGeneratingHTML}
-			/>
-			<Button
-				type="submit"
-				class="absolute bottom-6 right-6 ml-auto flex gap-2 p-1 px-2"
-				size="xs"
-				variant="default"
-				disabled={isLoading || isCapturingImage || isGeneratingHTML || !prompt.trim()}
+	<div class="flex h-full flex-1 flex-col p-2">
+		<div class="flex-0 flex flex-col rounded-md border-2 border-border p-2">
+			<form
+				onsubmit={(e) => {
+					executeDessignPipeline();
+				}}
+				class=""
 			>
-				{#if isGeneratingHTML}
-					<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-					Creating...
-				{:else}
-					<Paintbrush class="mr-2 h-4 w-4" />
-					Generate Design
-				{/if}
-			</Button>
-		</form>
+				<Textarea
+					bind:value={prompt}
+					{placeholder}
+					id="prompt-textarea"
+					class="resize-vertical h-21 min-h-16 w-full rounded border-2 border-border bg-background p-1 text-sm focus:border-background focus:outline-none focus:ring-2 focus:ring-primary"
+					disabled={isLoading || isCapturingImage || isGeneratingHTML}
+				/>
+				<div class="relative flex flex-row justify-between gap-1">
+					<Button
+						size="xs"
+						variant="secondary"
+						onclick={() => {
+							clearMessages();
+						}}
+					>
+						CLEAR
+					</Button>
+					<!-- Skip Concept -->
+					<div class="flex flex-row gap-2">
+						<Button
+							class="{artboardStore.chatSettings.skip_concept
+								? 'bg-destructive text-destructive-foreground'
+								: 'bg-accent text-accent-foreground'} px-1 py-0.5 text-xs"
+							size="xs"
+							variant={artboardStore.chatSettings.skip_concept ? 'destructive' : 'secondary'}
+							onclick={() => {
+								artboardStore.chatSettings.skip_concept = !artboardStore.chatSettings.skip_concept;
+							}}
+						>
+							{#if artboardStore.chatSettings.skip_concept}
+								<Ban class="mr-0.5 h-3 w-3" />
+								Will Skip Concept
+							{:else}
+								<Lightbulb class="mr-0.5 h-3 w-3" />
+								Concepting is On
+							{/if}
+						</Button>
+						<!-- Generate Design -->
+						<Button
+							class="relative flex p-0.5 px-1.5 text-xs"
+							type="submit"
+							size="xs"
+							variant="default"
+							disabled={isLoading || isCapturingImage || isGeneratingHTML || !prompt.trim()}
+						>
+							{#if isGeneratingHTML}
+								<Loader2 class="mr-1 h-3 w-3 animate-spin" />
+								{#if processingImageCount > 0 && totalImagesToProcess > 0}
+									Creating... ({processingImageCount}/{totalImagesToProcess})
+								{:else}
+									Creating...
+								{/if}
+							{:else}
+								<Paintbrush class="mr-1 h-3 w-3 " />
+								Generate Design
+							{/if}
+						</Button>
+					</div>
+				</div>
+			</form>
+		</div>
 	</div>
 </div>

@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Component Structure
+
+Pablo uses a component-based architecture with Svelte 5. The components are organized as follows:
+
+## Artboard Components
+The artboard is the main canvas where designs are rendered:
+
+- [src/lib/components/artboard/Artboard.svelte](mdc:src/lib/components/artboard/Artboard.svelte) - Main artboard component
+- [src/lib/components/HtmlRenderer.svelte](mdc:src/lib/components/HtmlRenderer.svelte) - Renders HTML designs
+
+## Chat Components
+The AI assistant interface for generating and modifying designs:
+
+- [src/lib/components/chat/AssistantPanel.svelte](mdc:src/lib/components/chat/AssistantPanel.svelte) - Panel containing the chat interface
+- [src/lib/components/chat/VisionChat.svelte](mdc:src/lib/components/chat/VisionChat.svelte) - AI chat interface that can analyze designs
+
+## UI Components
+Pablo uses shadcn-svelte UI components organized in the `src/lib/components/ui` directory:
+
+- `src/lib/components/ui/button` - Button components
+- `src/lib/components/ui/card` - Card components
+- `src/lib/components/ui/tabs` - Tab components
+- And many other UI primitives

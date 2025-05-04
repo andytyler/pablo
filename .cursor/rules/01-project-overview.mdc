@@ -1,0 +1,13 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Project Overview
+
+Pablo is an AI-powered design application that allows users to generate designs from text prompts. It features:
+
+- A landing page explaining the app's features and benefits
+- A design creation interface where users can generate designs from text
+- An AI assistant that can understand the current design and help modify it
+- Integration with AI models for text-to-design generation

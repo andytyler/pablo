@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Svelte 5 Syntax Guide
+
+This rule provides guidance on Svelte 5's syntax, with a focus on the new runes system that replaces the previous reactivity mechanisms.
+
+## Runes for Reactivity - @Svelte
+
+Svelte 5 introduces "runes" — special symbols that start with `$` to manage reactivity. These must be imported from 'svelte':

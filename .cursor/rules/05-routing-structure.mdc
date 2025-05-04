@@ -1,0 +1,23 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Routing Structure
+
+Pablo uses SvelteKit's file-based routing system. The main routes are:
+
+## Main Pages
+
+- [src/routes/+page.svelte](mdc:src/routes/+page.svelte) - Landing page with features, testimonials, and marketing information
+- [src/routes/new/+page.svelte](mdc:src/routes/new/+page.svelte) - Design creation interface with artboard and AI assistant
+- [src/routes/design/+page.svelte](mdc:src/routes/design/+page.svelte) - Experimental canvas using svelte-konva for design manipulation
+
+## API Routes
+
+- [src/routes/api/generate-design/+server.ts](mdc:src/routes/api/generate-design/+server.ts) - Design generation endpoint
+
+The application follows SvelteKit's routing conventions:
+- `+page.svelte` files define page components
+- `+layout.svelte` files define layouts that wrap page components
+- `+server.ts` files define API endpoints

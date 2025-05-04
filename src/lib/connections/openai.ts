@@ -8,12 +8,12 @@ export const openai = new OpenAI({
 });
 
 // Specify the model that supports vision capabilities
-export const VISION_MODEL = 'gpt-4o';
+export const VISION_MODEL = 'o4-mini-2025-04-16';
 
 export async function askGPT<T>(
 	system: string = 'You are a helpful assistant .',
 	prompt: string,
-	image_url: string | null,
+	images: { id: string; url: string; description: string }[],
 	options = {},
 	schema?: z.ZodType<T>
 ) {
@@ -26,10 +26,28 @@ export async function askGPT<T>(
 			prompt = 'Analyze this design';
 		}
 
+		let image_urls_array: OpenAI.ChatCompletionContentPart[] = [];
+		if (images && images.length > 0) {
+			console.log('✨ [OPENAI] images', images);
+			image_urls_array = images.flatMap((image) => [
+				{
+					type: 'image_url',
+					image_url: {
+						url: image.url,
+						detail: 'high'
+					}
+				},
+				{
+					type: 'text',
+					text: `Above image is Image ID: ${image.id} - Description: ${image.description}`
+				}
+			]);
+		}
+
 		console.log('✨ [OPENAI] prompt', prompt);
-		console.log('✨ [OPENAI] image_url', image_url);
+		console.log('✨ [OPENAI] images', images);
 		console.log('✨ [OPENAI] options', options);
-		console.log('✨ [OPENAI] schema', schema);
+		// console.log('✨ [OPENAI] schema', schema);
 		// Add response_format option if schema is provided
 		if (schema) {
 			let response = await openai.beta.chat.completions.parse({
@@ -41,18 +59,7 @@ export async function askGPT<T>(
 					},
 					{
 						role: 'user',
-						content: image_url
-							? [
-									{ type: 'text', text: prompt },
-									{
-										type: 'image_url',
-										image_url: {
-											url: image_url,
-											detail: 'high'
-										}
-									}
-								]
-							: prompt
+						content: images ? [{ type: 'text', text: prompt }, ...image_urls_array] : prompt
 					}
 				],
 				response_format: zodResponseFormat(schema, 'design'),
@@ -70,18 +77,7 @@ export async function askGPT<T>(
 					},
 					{
 						role: 'user',
-						content: image_url
-							? [
-									{ type: 'text', text: prompt },
-									{
-										type: 'image_url',
-										image_url: {
-											url: image_url,
-											detail: 'high'
-										}
-									}
-								]
-							: prompt
+						content: images ? [{ type: 'text', text: prompt }, ...image_urls_array] : prompt
 					}
 				],
 				...options
@@ -91,6 +87,65 @@ export async function askGPT<T>(
 		}
 	} catch (error) {
 		console.error('✨ [OPENAI] Error calling OpenAI:', error);
+		throw error;
+	}
+}
+
+export async function askGPTStreaming<T>(
+	system: string = 'You are a helpful assistant .',
+	prompt: string,
+	image_url: string | null,
+	options = {},
+	schema?: z.ZodType<T>
+) {
+	try {
+		console.log('*---askGPTStreaming---*');
+		console.log('✨ [OPENAI] system', system);
+
+		if (!prompt) {
+			console.error('✨ [OPENAI] Error: prompt parameter is undefined or null');
+			prompt = 'Analyze this design';
+		}
+
+		console.log('✨ [OPENAI] prompt', prompt);
+		console.log('✨ [OPENAI] image_url', image_url);
+		console.log('✨ [OPENAI] options', options);
+		console.log('✨ [OPENAI] schema', schema);
+
+		// Create the messages array with proper typing
+		const messages: Array<OpenAI.ChatCompletionMessageParam> = [
+			{
+				role: 'system',
+				content: system
+			},
+			{
+				role: 'user',
+				content: image_url
+					? [
+							{ type: 'text', text: prompt },
+							{
+								type: 'image_url',
+								image_url: {
+									url: image_url,
+									detail: 'high'
+								}
+							}
+						]
+					: prompt
+			}
+		];
+
+		// Stream the response
+		const stream = await openai.chat.completions.create({
+			model: VISION_MODEL,
+			messages,
+			stream: true,
+			...options
+		});
+
+		return stream;
+	} catch (error) {
+		console.error('✨ [OPENAI] Error calling OpenAI streaming:', error);
 		throw error;
 	}
 }

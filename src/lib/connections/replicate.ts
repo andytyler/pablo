@@ -1,7 +1,7 @@
-import { REPLICATE_API_TOKEN } from '$env/static/private';
 import Replicate from 'replicate';
+
 const replicate = new Replicate({
-	auth: REPLICATE_API_TOKEN,
+	auth: import.meta.env.VITE_REPLICATE_API_TOKEN,
 	useFileOutput: false // Prevent getting ReadableStream response
 });
 

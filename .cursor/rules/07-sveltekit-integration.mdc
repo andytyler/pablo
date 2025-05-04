@@ -1,0 +1,38 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# SvelteKit with Svelte 5
+
+This rule provides guidance on using SvelteKit with Svelte 5's runes system.
+
+## Page Data Loading - @Svelte
+
+SvelteKit can use Svelte 5 runes in page load functions:
+
+```ts
+// +page.server.ts or +page.ts
+export async function load({ params, fetch }) {
+  const data = await fetch('/api/data');
+  return { 
+    items: await data.json() 
+  };
+}
+```
+
+```svelte
+<!-- +page.svelte -->
+<script>
+  import { $props } from 'svelte';
+  
+  // Access page data with $props()
+  let { data } = $props();
+  
+  // data.items is available here
+</script>
+
+{#each data.items as item}
+  <div>{item.name}</div>
+{/each}
+```

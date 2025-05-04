@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Migrating from Svelte 4 to Svelte 5
+
+This rule provides guidance on migrating code from Svelte 4 to Svelte 5.
+
+## Reactive Declarations - @Svelte
+
+Replace `$:` reactive declarations with runes:

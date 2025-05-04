@@ -8,6 +8,7 @@
 		disabled?: boolean;
 		required?: boolean;
 		rows?: number;
+		id?: string;
 	}
 
 	export let value: string = '';
@@ -15,6 +16,7 @@
 	export let disabled: boolean = false;
 	export let required: boolean = false;
 	export let rows: number = 3;
+	export let id: string = '';
 </script>
 
 <textarea
@@ -23,9 +25,10 @@
 		$$props.class
 	)}
 	bind:value
+	{id}
 	{placeholder}
 	{disabled}
 	{required}
 	{rows}
 	{...$$restProps}
-/>
+></textarea>

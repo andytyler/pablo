@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Svelte 5 Reactivity Patterns
+
+This rule documents recommended patterns for managing reactivity in Svelte 5.
+
+## Tracking Dependencies - @Svelte
+
+Svelte 5 provides explicit dependency tracking:
