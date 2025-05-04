@@ -5,6 +5,7 @@
 	import * as ScrollArea from '$lib/components/ui/scroll-area';
 	import { supabase } from '$lib/connections/supabase';
 	import { artboardStore } from '$lib/stores/artboard-store.svelte';
+	import { addMessage, removeMessage } from '$lib/stores/messagesStore.svelte';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import Upload from 'lucide-svelte/icons/upload';
 	import X from 'lucide-svelte/icons/x';
@@ -136,14 +137,33 @@
 			console.log('🎨 [pasteImage] urlData', urlData);
 
 			if (urlData) {
+				// Add to messages context
+				const added_message = addMessage('image', [
+					{
+						role: 'user',
+						content: [
+							{
+								type: 'image_url',
+								image_url: {
+									url: urlData.signedUrl,
+									detail: 'high'
+								}
+							},
+							{
+								type: 'text',
+								text: `Above image is Image ID: '${fileKey}' \n Description: '${file.name}'`
+							}
+						]
+					}
+				]);
 				// Add to uploaded images array
 				artboardStore.uploadedImages = [
 					...(artboardStore.uploadedImages || []),
-					{ url: urlData.signedUrl, description: `${file.name}`, id: fileKey }
+					{ url: urlData.signedUrl, description: `${file.name}`, id: added_message.id }
 				];
 				artboardStore.allImages = [
 					...(artboardStore.allImages || []),
-					{ url: urlData.signedUrl, description: `${file.name}`, id: fileKey }
+					{ url: urlData.signedUrl, description: `${file.name}`, id: added_message.id }
 				];
 			}
 		} catch (err: any) {
@@ -161,7 +181,9 @@
 	async function deleteImage(id: string) {
 		try {
 			const imageToDelete = artboardStore.uploadedImages.find((image) => image.id === id);
+			const imageToDeleteFromAllImages = artboardStore.allImages.find((image) => image.id === id);
 
+			removeMessage(id);
 			if (!imageToDelete) {
 				console.error('Image to delete not found');
 				return;
@@ -250,7 +272,9 @@
 							/>
 							<button
 								class="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-foreground hover:bg-destructive hover:text-destructive-foreground"
-								onclick={() => deleteImage(image.id)}
+								onclick={() => {
+									deleteImage(image.id);
+								}}
 							>
 								<X class="h-4 w-4" />
 							</button>

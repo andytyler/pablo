@@ -1,0 +1,261 @@
+{
+	"design_json": {
+		"concept": "Cyberpunk AI Demo Night Poster",
+		"background": "#0a0a0f",
+		"artboard": { "width": 1080, "height": 1920 },
+		"items": [
+			{
+				"item": { "id": "uploads/1746392480042.png" },
+				"x": 0,
+				"y": 400,
+				"width": 1080,
+				"height": 600,
+				"rotation": 0,
+				"zIndex": 1,
+				"opacity": 90
+			},
+			{
+				"item": { "fill": "#00ffff", "stroke": "#00ffff", "strokeWidth": 0 },
+				"x": 140,
+				"y": 350,
+				"width": 800,
+				"height": 4,
+				"rotation": 0,
+				"zIndex": 2,
+				"opacity": 100
+			},
+			{
+				"item": { "fill": "#ff00ff", "stroke": "#ff00ff", "strokeWidth": 0 },
+				"x": 140,
+				"y": 1020,
+				"width": 800,
+				"height": 4,
+				"rotation": 0,
+				"zIndex": 2,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "AI DEMO NIGHT",
+					"font": "Orbitron",
+					"fitText": false,
+					"fontWeight": 700,
+					"fontColor": "#ff00ff",
+					"fontStyle": "normal",
+					"width": 1080,
+					"align": "center",
+					"wrap": false,
+					"bold": true,
+					"italic": false,
+					"underline": false
+				},
+				"x": 0,
+				"y": 250,
+				"width": 1080,
+				"height": 200,
+				"rotation": 0,
+				"zIndex": 3,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "Experience the Future of Intelligence",
+					"font": "Orbitron",
+					"fitText": false,
+					"fontWeight": 400,
+					"fontColor": "#00ffff",
+					"fontStyle": "normal",
+					"width": 1080,
+					"align": "center",
+					"wrap": false,
+					"bold": false,
+					"italic": false,
+					"underline": false
+				},
+				"x": 0,
+				"y": 330,
+				"width": 1080,
+				"height": 100,
+				"rotation": 0,
+				"zIndex": 3,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "Dec 15, 2023 | 7:00 PM",
+					"font": "Roboto Mono",
+					"fitText": false,
+					"fontWeight": 400,
+					"fontColor": "#ffffff",
+					"fontStyle": "normal",
+					"width": 1080,
+					"align": "center",
+					"wrap": false,
+					"bold": false,
+					"italic": false,
+					"underline": false
+				},
+				"x": 0,
+				"y": 1550,
+				"width": 1080,
+				"height": 80,
+				"rotation": 0,
+				"zIndex": 3,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "Neon Hall, Downtown City",
+					"font": "Roboto Mono",
+					"fitText": false,
+					"fontWeight": 400,
+					"fontColor": "#ffffff",
+					"fontStyle": "normal",
+					"width": 1080,
+					"align": "center",
+					"wrap": false,
+					"bold": false,
+					"italic": false,
+					"underline": false
+				},
+				"x": 0,
+				"y": 1630,
+				"width": 1080,
+				"height": 80,
+				"rotation": 0,
+				"zIndex": 3,
+				"opacity": 100
+			}
+		]
+	},
+	"step_one_concept": {
+		"concept": "Neon Cyberpunk AI Demo Night Poster",
+		"background": "#0D001F",
+		"artboard": { "width": 1080, "height": 1920 },
+		"items": [
+			{
+				"item": { "id": "uploads/1746392480042.png" },
+				"x": 0,
+				"y": 0,
+				"width": 1080,
+				"height": 1920,
+				"rotation": 0,
+				"zIndex": 0,
+				"opacity": 100
+			},
+			{
+				"item": { "fill": "#000000", "stroke": "#000000", "strokeWidth": 0 },
+				"x": 0,
+				"y": 0,
+				"width": 1080,
+				"height": 1920,
+				"rotation": 0,
+				"zIndex": 1,
+				"opacity": 50
+			},
+			{
+				"item": {
+					"text": "AI Demo Night",
+					"font": "Montserrat ExtraBold",
+					"fitText": true,
+					"fontWeight": 800,
+					"fontColor": "#FF3BEB",
+					"fontStyle": "normal",
+					"width": 900,
+					"align": "center",
+					"wrap": true,
+					"bold": true,
+					"italic": false,
+					"underline": false
+				},
+				"x": 90,
+				"y": 200,
+				"width": 900,
+				"height": 200,
+				"rotation": 0,
+				"zIndex": 2,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "Join us for a night of groundbreaking AI demos",
+					"font": "Montserrat",
+					"fitText": true,
+					"fontWeight": 400,
+					"fontColor": "#FFFFFF",
+					"fontStyle": "normal",
+					"width": 800,
+					"align": "center",
+					"wrap": true,
+					"bold": false,
+					"italic": false,
+					"underline": false
+				},
+				"x": 140,
+				"y": 360,
+				"width": 800,
+				"height": 150,
+				"rotation": 0,
+				"zIndex": 2,
+				"opacity": 100
+			},
+			{
+				"item": { "fill": "#FF3BEB", "stroke": "#FF3BEB", "strokeWidth": 0 },
+				"x": 340,
+				"y": 1300,
+				"width": 400,
+				"height": 100,
+				"rotation": 0,
+				"zIndex": 2,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "RSVP NOW",
+					"font": "Montserrat Bold",
+					"fitText": true,
+					"fontWeight": 700,
+					"fontColor": "#0D001F",
+					"fontStyle": "normal",
+					"width": 300,
+					"align": "center",
+					"wrap": false,
+					"bold": true,
+					"italic": false,
+					"underline": false
+				},
+				"x": 390,
+				"y": 1310,
+				"width": 300,
+				"height": 80,
+				"rotation": 0,
+				"zIndex": 3,
+				"opacity": 100
+			},
+			{
+				"item": {
+					"text": "Dec 1, 2023 | 7pm - 10pmnTech Hub Auditorium",
+					"font": "Montserrat",
+					"fitText": true,
+					"fontWeight": 400,
+					"fontColor": "#FFFFFF",
+					"fontStyle": "normal",
+					"width": 800,
+					"align": "center",
+					"wrap": true,
+					"bold": false,
+					"italic": false,
+					"underline": false
+				},
+				"x": 140,
+				"y": 1500,
+				"width": 800,
+				"height": 200,
+				"rotation": 0,
+				"zIndex": 2,
+				"opacity": 100
+			}
+		]
+	},
+	"design_generation_id": "ouo0yn0t"
+}

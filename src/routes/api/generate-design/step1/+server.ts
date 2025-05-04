@@ -1,3 +1,5 @@
+import { addMessage } from '$lib/stores/messagesStore.svelte';
+import type { ChatMessageWithMeta } from '$lib/types';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { generateDesign, generateDesignConcept, type StructuredDesign } from './design';
@@ -8,12 +10,16 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const {
 			prompt,
-			image_urls = [],
 			previous_design_json = '',
 			artboard_size = 'unknown',
 			skip_concept = false,
-			uploadedImages = [],
-			existingImages = []
+			chat_history_messages
+		}: {
+			prompt: string;
+			skip_concept: boolean;
+			chat_history_messages: ChatMessageWithMeta[];
+			previous_design_json: string;
+			artboard_size: string;
 		} = await request.json();
 
 		if (!prompt) {
@@ -26,31 +32,54 @@ export const POST: RequestHandler = async ({ request }) => {
 		let finalUserPrompt = prompt;
 		let concept = null;
 
-		// Add information about existing images if available
-		if (existingImages && existingImages.length > 0) {
-			const imageCount = existingImages.length;
-			finalUserPrompt += `\n\nI have ${imageCount} existing images that can be reused by their image IDs. For references, these are the descriptions:\n`;
-
-			Object.values(existingImages).forEach((img: any, index) => {
-				finalUserPrompt += ` Image ID: ${img.id} - Description: ${img.description}\n`;
-			});
-
-			finalUserPrompt += `\nTo use an existing image, reference its ID in the design JSON.`;
-		}
-
+		// STEP ONE: Generate design concept
 		if (!skip_concept) {
-			concept = await generateDesignConcept({ prompt: finalUserPrompt, images: existingImages });
-			finalUserPrompt = `${finalUserPrompt}\n\nDesign concept: ${concept}`;
+			console.log('🎨 (+server.ts) [design-json/step1] Generating design concept');
+			console.log(
+				'🎨 (+server.ts) [design-json/step1] chat_history_messages',
+				chat_history_messages
+			);
+			concept = await generateDesignConcept(chat_history_messages);
+			addMessage('assistant', [
+				{
+					role: 'assistant',
+					content: [{ type: 'text', text: `${prompt}\n\nDesign concept: ${concept}` }]
+				}
+			]);
 		}
 
-		// Generate the structured design without processing images
+		// STEP TWO: Generate the structured design without processing images
 		const design_json = await generateDesign(
-			'unknown',
-			finalUserPrompt,
-			existingImages,
+			chat_history_messages,
 			artboard_size,
 			previous_design_json
 		);
+
+		// Validate that the design_json has the expected structure
+		if (!design_json || !design_json.artboard) {
+			console.error('🧠 [design-json/step1] ❌ Error: Invalid design structure');
+			return json(
+				{
+					error: 'Invalid design structure returned from AI',
+					details: 'Missing artboard property'
+				},
+				{ status: 500 }
+			);
+		}
+
+		if (
+			typeof design_json.artboard.width !== 'number' ||
+			typeof design_json.artboard.height !== 'number'
+		) {
+			console.error('🧠 [design-json/step1] ❌ Error: Invalid artboard dimensions');
+			return json(
+				{
+					error: 'Invalid artboard dimensions returned from AI',
+					details: 'Width and height must be numbers'
+				},
+				{ status: 500 }
+			);
+		}
 
 		// Return the design with image placeholders and concept
 		return json({
@@ -62,7 +91,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		console.error('🧠 [design-json/step1] ❌ Error in design structure generation:', error);
 		return json(
 			{
-				error: 'Failed to generate design structure',
+				error: 'STEP ONE ERROR: Failed to generate design structure',
 				details: error instanceof Error ? error.message : String(error)
 			},
 			{ status: 500 }

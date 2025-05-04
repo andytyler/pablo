@@ -3,11 +3,11 @@
 import type OpenAI from 'openai';
 
 // Types
-export type Message = {
+export type ChatMessageWithMeta = {
 	id: string;
-	chat_role: 'user' | 'assistant' | 'system' | 'info' | 'error' | 'image'; // we filter out 'info' messages when we pass this to AI
 	timestamp: Date;
-	content: OpenAI.ChatCompletionContentPart[];
+	style: 'user' | 'assistant' | 'system' | 'info' | 'error' | 'image'; // we filter out 'info' messages when we pass this to AI
+	content: OpenAI.ChatCompletionMessageParam[];
 };
 
 // HTML rendering types

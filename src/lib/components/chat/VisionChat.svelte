@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import * as ScrollArea from '$lib/components/ui/scroll-area';
-	import type { StructuredDesign } from '../../../routes/api/generate-design/step1/design';
 	import { captureCanvasScreenshot } from '$lib/connections/screenshot';
 	import { artboardStore } from '$lib/stores/artboard-store.svelte';
 	import AlertTriangle from '@lucide/svelte/icons/alert-triangle';
@@ -10,17 +9,24 @@
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import Paintbrush from '@lucide/svelte/icons/paintbrush';
 	import { onMount } from 'svelte';
+	import type { StructuredDesign } from '../../../routes/api/generate-design/step1/design';
 	import { Button } from '../ui/button';
 	import { Textarea } from '../ui/textarea';
+
 	// Props using Svelte 5 syntax
 	let { canvasSelector = '#design-canvas', placeholder = 'Ask something about your design...' } =
 		$props();
 
-	import type { Design, DesignItem, Message } from '$lib/types';
+	import {
+		addMessage,
+		chat_history,
+		clearMessages,
+		initMessages
+	} from '$lib/stores/messagesStore.svelte';
+	import type { Design, DesignItem } from '$lib/types';
 	import ChatMessage from './ChatMessage.svelte';
 
 	// State using Svelte 5 runes
-	let messages = $state<Message[]>([]);
 	let prompt = $state('');
 	let isCapturingImage = $state(false);
 	let isGeneratingHTML = $state(false);
@@ -31,10 +37,8 @@
 	let totalImagesToProcess = $state(0);
 	let designId = $state<string | null>(null);
 	let processedImageItems = $state<Map<string, DesignItem>>(new Map());
-	// Store the current design JSON as an object (not a string)
 	let designJson = $state<Design | null>(null);
 
-	// Track when we're actively updating images to prevent recursive updates
 	let isUpdatingImages = $state(false);
 
 	// Scroll to bottom whenever messages change or component mounts
@@ -48,23 +52,16 @@
 		}
 	}
 
-	$effect(() => {
-		if (messages.length > 0) {
-			scrollToBottom();
-		}
-	});
-
-	// const html_content = $derived(
-	// 	artboardStore.image_enriched_design_json
-	// 		? imageEnrichedDesignJsonToHtml(artboardStore.image_enriched_design_json)
-	// 		: ''
-	// );
-
 	onMount(() => {
 		scrollToBottom();
 
 		// Load chat settings from localStorage if available
 		if (browser) {
+			initMessages();
+			const storedArtboardHistory = localStorage.getItem('artboard_history');
+			if (storedArtboardHistory) {
+				artboardStore.design_json = JSON.parse(storedArtboardHistory);
+			}
 			const storedSettings = localStorage.getItem('chat_settings');
 			if (storedSettings) {
 				try {
@@ -85,38 +82,30 @@
 
 					if (e.target && 'form' in e.target) {
 						const formElement = e.target.form as HTMLFormElement;
-						formElement?.submit(); // or formElement?.requestSubmit() depending on your usecase
+						formElement?.submit();
 					}
 				});
 			}
 		}
 	});
 
-	// Initialize from localStorage
 	$effect(() => {
-		if (browser) {
-			const storedMessages = localStorage.getItem('chat_history');
-			if (storedMessages) {
-				try {
-					const parsedMessages = JSON.parse(storedMessages);
-					// Convert string timestamps back to Date objects
-					parsedMessages.forEach((msg: any) => {
-						if (typeof msg.timestamp === 'string') {
-							msg.timestamp = new Date(msg.timestamp);
-						}
-					});
-					messages = parsedMessages;
-				} catch (error) {
-					console.error('Failed to parse stored chat history:', error);
-				}
-			}
+		if (chat_history.messages.length > 0) {
+			scrollToBottom();
 		}
 	});
 
 	// Save to localStorage whenever messages change
 	$effect(() => {
 		if (browser) {
-			localStorage.setItem('chat_history', JSON.stringify(messages));
+			localStorage.setItem('chat_history', JSON.stringify(chat_history));
+		}
+	});
+
+	// Save to localStorage whenever messages change
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('artboard_history', JSON.stringify(artboardStore.design_json));
 		}
 	});
 
@@ -127,34 +116,13 @@
 		}
 	});
 
-	// Helper functions
-	function generateId() {
-		return Math.random().toString(36).substring(2, 10);
-	}
-
-	function addMessage(chat_role: Message['chat_role'], content: Message['content']) {
-		const message: Message = {
-			id: generateId(),
-			chat_role: chat_role,
-			content,
-			timestamp: new Date()
-		};
-		messages = [...messages, message];
-		return message;
-	}
-
-	function clearMessages() {
-		if (browser) {
-			localStorage.removeItem('chat_history');
-		}
-		messages = [];
-	}
-
 	// Function to generate design using the two-step approach with separate endpoints
 	async function executeDessignPipeline() {
 		if (!prompt.trim()) {
 			console.error('No prompt provided');
-			addMessage('info', [{ type: 'text', text: 'No prompt provided' }]);
+			addMessage('info', [
+				{ role: 'user', content: [{ type: 'text', text: 'No prompt provided' }] }
+			]);
 			return;
 		}
 
@@ -173,16 +141,29 @@
 			}
 
 			addMessage('image', [
-				{ type: 'image_url', image_url: { url: canvasScreenshotUrl, detail: 'high' } }
+				{
+					role: 'user',
+					content: [{ type: 'image_url', image_url: { url: canvasScreenshotUrl, detail: 'high' } }]
+				}
 			]);
 
-			addMessage('user', [{ type: 'text', text: prompt }]);
+			addMessage('user', [{ role: 'user', content: [{ type: 'text', text: prompt }] }]);
 
 			// Set initial loading state
 			artboardStore.isLoading = true;
 
 			// Step 1: Get design JSON with image placeholders
-			addMessage('info', [{ type: 'text', text: 'Step 1: Generating design structure...' }]);
+			addMessage('info', [
+				{
+					role: 'assistant',
+					content: [{ type: 'text', text: 'Step 1: Generating design structure...' }]
+				}
+			]);
+
+			console.log(
+				'🎨 (VisionChat.svelte) [design-json/step1] chat_history.messages',
+				JSON.stringify(chat_history.messages, null, 2)
+			);
 
 			const designResponse = await fetch('/api/generate-design/step1', {
 				method: 'POST',
@@ -191,15 +172,13 @@
 				},
 				body: JSON.stringify({
 					prompt: prompt.trim(),
-					image_url: canvasScreenshotUrl,
 					previous_design_json:
 						typeof artboardStore.design_json === 'string'
 							? artboardStore.design_json
 							: JSON.stringify(artboardStore.design_json || '{}'),
 					artboard_size: `width: ${artboardStore.artboard_width}px, height: ${artboardStore.artboard_height}px`,
 					skip_concept: artboardStore.chatSettings.skip_concept,
-					uploadedImages: artboardStore.uploadedImages,
-					existingImages: artboardStore.allImages
+					chat_history_messages: chat_history.messages
 				})
 			});
 
@@ -216,11 +195,27 @@
 			} = await designResponse.json();
 			console.log('step1Response', step_one_response);
 
+			// Add defensive checking for required properties
+			if (!step_one_response || !step_one_response.design_json) {
+				throw new Error('Invalid response structure: design_json is missing');
+			}
+
+			if (!step_one_response.design_json.artboard) {
+				throw new Error('Invalid design structure: artboard is missing');
+			}
+
+			if (
+				typeof step_one_response.design_json.artboard.width !== 'number' ||
+				typeof step_one_response.design_json.artboard.height !== 'number'
+			) {
+				throw new Error('Invalid artboard dimensions');
+			}
+
 			artboardStore.design_json = JSON.stringify(step_one_response.design_json);
 			artboardStore.design_concept = step_one_response.step_one_concept;
 			artboardStore.current_generation_id = step_one_response.design_generation_id;
-			artboardStore.artboard_height = step_one_response.design_json.artboard.height;
 			artboardStore.artboard_width = step_one_response.design_json.artboard.width;
+			artboardStore.artboard_height = step_one_response.design_json.artboard.height;
 
 			// Check if any image items reference existing image IDs
 			step_one_response.design_json.items = step_one_response.design_json.items.map((item: any) => {
@@ -249,12 +244,20 @@
 
 			artboardStore.image_enriched_design_json = step_one_response.design_json;
 
-			if (step_one_response.design_concept) {
-				addMessage('assistant', [{ type: 'text', text: step_one_response.design_concept }]);
+			if (step_one_response.step_one_concept) {
+				addMessage('assistant', [
+					{
+						role: 'assistant',
+						content: [{ type: 'text', text: step_one_response.step_one_concept }]
+					}
+				]);
 			}
 
-			addMessage('system', [
-				{ type: 'text', text: 'Design structure created. Generating images...' }
+			addMessage('info', [
+				{
+					role: 'user',
+					content: [{ type: 'text', text: 'Design structure created. Generating images...' }]
+				}
 			]);
 
 			// Step 2: Process images in parallel
@@ -341,11 +344,18 @@
 			// Clear the prompt and complete
 			prompt = '';
 			artboardStore.isLoading = false;
-			addMessage('system', [{ type: 'text', text: 'Design created successfully!' }]);
+			addMessage('info', [
+				{ role: 'assistant', content: [{ type: 'text', text: 'Design created successfully!' }] }
+			]);
 		} catch (e) {
 			console.error('Error generating design:', e);
 			generationError = e instanceof Error ? e.message : 'Failed to generate design';
-			addMessage('error', [{ type: 'text', text: `Design generation failed: ${generationError}` }]);
+			addMessage('error', [
+				{
+					role: 'user',
+					content: [{ type: 'text', text: `Design generation failed: ${generationError}` }]
+				}
+			]);
 			artboardStore.isLoading = false;
 		} finally {
 			isGeneratingHTML = false;
@@ -359,7 +369,7 @@
 		class="relative flex h-[calc(100vh-250px)] flex-1 flex-col px-2"
 		id="scroll-area"
 	>
-		{#each messages as message (message.id)}
+		{#each chat_history.messages as message (message.id)}
 			<ChatMessage {message} />
 		{/each}
 

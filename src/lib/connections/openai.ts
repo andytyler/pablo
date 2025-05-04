@@ -1,3 +1,4 @@
+import type { ChatMessageWithMeta } from '$lib/types';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import type { z } from 'zod';
@@ -91,122 +92,46 @@ export async function askGPT<T>(
 	}
 }
 
-export async function askGPTStreaming<T>(
-	system: string = 'You are a helpful assistant .',
-	prompt: string,
-	image_url: string | null,
-	options = {},
-	schema?: z.ZodType<T>
-) {
+/**
+ * Sends a conversation history to OpenAI's GPT model and returns the completion.
+ *
+ * @param {ChatMessageWithMeta[]} chat_history_messages - Array of messages representing the conversation history
+ * @param {Object} options - Additional configuration options for the OpenAI API call
+ * @param {z.ZodType<T>} [schema] - Optional schema for validating and parsing the response
+ * @returns {Promise<string|T>} The model's response as a string, or parsed according to schema if provided
+ * @throws {Error} If the OpenAI API call fails
+ */
+export async function askGPTWithChatHistory<T>(
+	chat_history_messages: ChatMessageWithMeta[],
+	schema?: z.ZodType<T>,
+	options = {}
+): Promise<string | T> {
 	try {
-		console.log('*---askGPTStreaming---*');
-		console.log('✨ [OPENAI] system', system);
+		console.log('*---askGPTWithChatHistory---*');
+		console.log('✨ [OPENAI] chat_history', JSON.stringify(chat_history_messages, null, 2));
 
-		if (!prompt) {
-			console.error('✨ [OPENAI] Error: prompt parameter is undefined or null');
-			prompt = 'Analyze this design';
+		let messages_array = chat_history_messages.flatMap((message) => message.content);
+
+		if (schema) {
+			let response = await openai.beta.chat.completions.parse({
+				model: VISION_MODEL,
+				messages: messages_array,
+				response_format: zodResponseFormat(schema, 'design'),
+				...options
+			});
+			console.log('✨ [OPENAI] response', response);
+			return response.choices[0].message.parsed as T;
+		} else {
+			let response = await openai.chat.completions.create({
+				model: VISION_MODEL,
+				messages: messages_array,
+				...options
+			});
+			console.log('✨ [OPENAI] response', response);
+			return response.choices[0].message.content as string;
 		}
-
-		console.log('✨ [OPENAI] prompt', prompt);
-		console.log('✨ [OPENAI] image_url', image_url);
-		console.log('✨ [OPENAI] options', options);
-		console.log('✨ [OPENAI] schema', schema);
-
-		// Create the messages array with proper typing
-		const messages: Array<OpenAI.ChatCompletionMessageParam> = [
-			{
-				role: 'system',
-				content: system
-			},
-			{
-				role: 'user',
-				content: image_url
-					? [
-							{ type: 'text', text: prompt },
-							{
-								type: 'image_url',
-								image_url: {
-									url: image_url,
-									detail: 'high'
-								}
-							}
-						]
-					: prompt
-			}
-		];
-
-		// Stream the response
-		const stream = await openai.chat.completions.create({
-			model: VISION_MODEL,
-			messages,
-			stream: true,
-			...options
-		});
-
-		return stream;
 	} catch (error) {
-		console.error('✨ [OPENAI] Error calling OpenAI streaming:', error);
+		console.error('✨ [OPENAI] Error calling OpenAI:', error);
 		throw error;
 	}
 }
-
-// // Helper function to format messages for vision-enabled chat
-// export function formatMessageWithImage(
-// 	system: string = 'You are a helpful assistant analyzing design images and providing design feedback and suggestions.',
-// 	prompt: string,
-// 	imageBase64: string | null
-// ): Array<OpenAI.ChatCompletionMessageParam> {
-// 	if (!prompt) {
-// 		console.error('Error: prompt is undefined or null');
-// 		prompt = 'Analyze this design';
-// 	}
-
-// 	const messages: Array<OpenAI.ChatCompletionMessageParam> = [
-// 		{
-// 			role: 'system',
-// 			content: system
-// 		},
-// 		{
-// 			role: 'user',
-// 			content: imageBase64
-// 				? [
-// 						{ type: 'text', text: prompt },
-// 						{
-// 							type: 'image_url',
-// 							image_url: {
-// 								url: `data:image/png;base64,${imageBase64}`,
-// 								detail: 'high'
-// 							}
-// 						}
-// 					]
-// 				: prompt
-// 		}
-// 	];
-// 	console.log('Formatted prompt:', prompt);
-// 	// console.log(imageBase64);
-// 	console.log('Messages array created successfully');
-// 	return messages as OpenAI.ChatCompletionMessageParam[];
-// }
-
-// /**
-//  * Creates a streaming chat completion with the OpenAI API
-//  * @param messages - Array of chat messages
-//  * @param options - Additional options for the API call
-//  * @returns A streaming response from the OpenAI API
-//  */
-// export function createStreamingChatCompletion(
-// 	messages: OpenAI.ChatCompletionMessageParam[],
-// 	options = {}
-// ) {
-// 	try {
-// 		return openai.chat.completions.create({
-// 			model: VISION_MODEL,
-// 			messages,
-// 			stream: true,
-// 			...options
-// 		});
-// 	} catch (error) {
-// 		console.error('Error calling OpenAI streaming:', error);
-// 		throw error;
-// 	}
-// }
