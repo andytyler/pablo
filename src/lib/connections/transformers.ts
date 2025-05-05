@@ -90,6 +90,11 @@ export function imageEnrichedDesignJsonToHtml(design: StructuredDesignProcessedI
 				})
 				.join('\n');
 		}
+		const all_fonts = design.items
+			.filter((item) => item.item)
+			.map((item) => ('font' in item.item ? item.item.font : false))
+			.filter((item) => item !== false);
+		const unique_fonts = [...new Set(all_fonts)];
 
 		// Add special styling for fit-text elements
 		const fitTextStyle = `
@@ -104,7 +109,11 @@ export function imageEnrichedDesignJsonToHtml(design: StructuredDesignProcessedI
   background-image: linear-gradient(45deg, #f0f0f0 25%, #e0e0e0 25%, #e0e0e0 50%, #f0f0f0 50%, #f0f0f0 75%, #e0e0e0 75%, #e0e0e0 100%);
   background-size: 14px 14px;
 }
-</style>`;
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=${unique_fonts.map((font) => font.replace(/ /g, '+')).join('&family=')}&display=swap" rel="stylesheet">
+`;
 
 		return `${fitTextStyle}\n${container}\n${itemsHtml}\n</div>`;
 	} catch (error) {

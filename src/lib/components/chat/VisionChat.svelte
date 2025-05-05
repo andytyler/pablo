@@ -2,7 +2,11 @@
 	import { browser } from '$app/environment';
 	import * as ScrollArea from '$lib/components/ui/scroll-area';
 	import { captureCanvasScreenshot } from '$lib/connections/screenshot';
-	import { artboardStore } from '$lib/stores/artboard-store.svelte';
+	import {
+		addImageToStore,
+		artboardStore,
+		initArtboardStore
+	} from '$lib/stores/artboard-store.svelte';
 	import AlertTriangle from '@lucide/svelte/icons/alert-triangle';
 	import Ban from '@lucide/svelte/icons/ban';
 	import Lightbulb from '@lucide/svelte/icons/lightbulb';
@@ -23,7 +27,7 @@
 		clearMessages,
 		initMessages
 	} from '$lib/stores/messagesStore.svelte';
-	import type { Design, DesignItem } from '$lib/types';
+	import type { Design, DesignElement } from '$lib/types';
 	import ChatMessage from './ChatMessage.svelte';
 
 	// State using Svelte 5 runes
@@ -36,7 +40,7 @@
 	let processingImageCount = $state(0);
 	let totalImagesToProcess = $state(0);
 	let designId = $state<string | null>(null);
-	let processedImageItems = $state<Map<string, DesignItem>>(new Map());
+	let processedImageItems = $state<Map<string, DesignElement>>(new Map());
 	let designJson = $state<Design | null>(null);
 
 	let isUpdatingImages = $state(false);
@@ -58,10 +62,8 @@
 		// Load chat settings from localStorage if available
 		if (browser) {
 			initMessages();
-			const storedArtboardHistory = localStorage.getItem('artboard_history');
-			if (storedArtboardHistory) {
-				artboardStore.design_json = JSON.parse(storedArtboardHistory);
-			}
+			initArtboardStore();
+
 			const storedSettings = localStorage.getItem('chat_settings');
 			if (storedSettings) {
 				try {
@@ -102,10 +104,9 @@
 		}
 	});
 
-	// Save to localStorage whenever messages change
 	$effect(() => {
 		if (browser) {
-			localStorage.setItem('artboard_history', JSON.stringify(artboardStore.design_json));
+			localStorage.setItem('artboard_history', artboardStore.design_json || '');
 		}
 	});
 
@@ -211,7 +212,7 @@
 				throw new Error('Invalid artboard dimensions');
 			}
 
-			artboardStore.design_json = JSON.stringify(step_one_response.design_json);
+			artboardStore.design_json = step_one_response.design_json;
 			artboardStore.design_concept = step_one_response.step_one_concept;
 			artboardStore.current_generation_id = step_one_response.design_generation_id;
 			artboardStore.artboard_width = step_one_response.design_json.artboard.width;
@@ -225,20 +226,27 @@
 					typeof item.item === 'object' &&
 					'id' in item.item &&
 					item.item.id &&
-					artboardStore.allImages[item.item.id]
+					artboardStore.all_images.find((image) => image.id === item.item.id)
 				) {
-					const existingImage = artboardStore.allImages[item.item.id];
+					const existingImage = artboardStore.all_images.find((image) => image.id === item.item.id);
 					// Update with information from the existing image
-					return {
-						...item,
-						item: {
-							id: item.item.id,
-							url: existingImage.url,
-							description: existingImage.description
-						}
-					};
+					if (existingImage) {
+						addMessage('info', [
+							{
+								role: 'assistant',
+								content: [{ type: 'text', text: `Found existing image: ${existingImage.id}` }]
+							}
+						]);
+						return {
+							...item,
+							item: {
+								id: item.item.id,
+								url: existingImage.url,
+								description: existingImage.description
+							}
+						};
+					}
 				}
-
 				return item;
 			});
 
@@ -260,85 +268,67 @@
 				}
 			]);
 
-			// Step 2: Process images in parallel
+			// Step 2: Process images
 			if (artboardStore.image_enriched_design_json) {
-				// First, extract items that need image processing
-				const itemsNeedingImages = artboardStore.image_enriched_design_json.items.filter(
-					(item) =>
-						item.item &&
-						// Check if src exists and is falsy, or doesn't exist at all
-						(('src' in item.item && !item.item.src) || !('src' in item.item))
+				const new_design_elements = await Promise.all(
+					artboardStore.image_enriched_design_json.items.map(async (image_element, index) => {
+						if (image_element.item.type === 'new_image') {
+							try {
+								const imageResponse = await fetch('/api/generate-design/image-pipeline', {
+									method: 'POST',
+									headers: {
+										'Content-Type': 'application/json'
+									},
+									body: JSON.stringify({
+										image_item: image_element
+									})
+								});
+
+								if (!imageResponse.ok) {
+									const errorData = await imageResponse.json();
+									console.error(`Failed to process image: ${errorData.error}`);
+									return image_element;
+								}
+
+								const imageData = await imageResponse.json();
+								console.log('Generated Image:', imageData);
+
+								// Add the image to the store
+								addImageToStore('generated', {
+									id: imageData.image_id,
+									url: imageData.image_url,
+									description: imageData.image_description
+								});
+
+								// Add the image to the chat history
+								addMessage('image', [
+									{
+										role: 'user',
+										content: [
+											{ type: 'image_url', image_url: { url: imageData.image_url, detail: 'high' } }
+										]
+									}
+								]);
+
+								return {
+									...image_element,
+									item: {
+										...image_element.item,
+										id: imageData.image_id,
+										url: imageData.image_url,
+										description: imageData.image_description
+									}
+								};
+							} catch (err) {
+								console.error('Error processing image:', err);
+								processingImageCount++;
+								return image_element;
+							}
+						}
+						return image_element;
+					})
 				);
-
-				totalImagesToProcess = itemsNeedingImages.length;
-				processingImageCount = 0;
-
-				// Process images in parallel
-				const imagePromises = itemsNeedingImages.map(async (imageItem) => {
-					try {
-						const imageResponse = await fetch('/api/generate-design/image-pipeline', {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json'
-							},
-							body: JSON.stringify({
-								image_item: imageItem
-							})
-						});
-
-						if (!imageResponse.ok) {
-							const errorData = await imageResponse.json();
-							console.error(`Failed to process image: ${errorData.error}`);
-							processingImageCount++;
-							return null;
-						}
-
-						const imageData = await imageResponse.json();
-						console.log('imageData', imageData);
-
-						// Safely update the store with an immutable update pattern
-						if (artboardStore.image_enriched_design_json) {
-							// Set flag to prevent effect from running during update
-							isUpdatingImages = true;
-
-							// Create a new items array with the updated item
-							const updatedItems = artboardStore.image_enriched_design_json.items.map((item) =>
-								item.item &&
-								'id' in item.item &&
-								imageData.image_id &&
-								item.item.id === imageData.image_id
-									? {
-											...item,
-											item: {
-												id: imageData.image_id,
-												url: imageData.image_url,
-												description: imageData.image_description
-											}
-										}
-									: item
-							);
-
-							// Update the store with a new object reference
-							artboardStore.image_enriched_design_json = {
-								...artboardStore.image_enriched_design_json,
-								items: updatedItems
-							};
-
-							// Clear flag after update
-							isUpdatingImages = false;
-						}
-
-						processingImageCount++;
-						return imageData;
-					} catch (err) {
-						console.error('Error processing image:', err);
-						processingImageCount++;
-						return null;
-					}
-				});
-
-				// Wait for all image processing to complete
-				await Promise.all(imagePromises);
+				artboardStore.image_enriched_design_json.items = new_design_elements || [];
 			}
 
 			// Clear the prompt and complete

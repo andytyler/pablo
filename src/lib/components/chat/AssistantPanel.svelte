@@ -70,7 +70,7 @@
 					<ArtboardAssets />
 				</div>
 
-				{#if artboardStore.uploadedImages && artboardStore.uploadedImages.length > 0}
+				{#if artboardStore.uploaded_images && artboardStore.uploaded_images.length > 0}
 					<div class="px-4 pt-2">
 						<h3 class="text-sm font-medium">Available in Design</h3>
 						<p class="mb-2 text-xs text-muted-foreground">

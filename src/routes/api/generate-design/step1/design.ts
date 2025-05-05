@@ -3,7 +3,9 @@ import type { ChatMessageWithMeta } from '$lib/types';
 import { z } from 'zod';
 import { askGPTWithChatHistory } from '../../../../lib/connections/openai';
 
-export async function generateDesignConcept(chat_history_messages: ChatMessageWithMeta[]) {
+export async function generateDesignConcept(
+	chat_history_messages: ChatMessageWithMeta[]
+): Promise<string> {
 	console.log('🎨 [design-concept] getDesignConcept');
 	console.log('🎨 [design-concept] chat_history', chat_history_messages);
 
@@ -24,7 +26,7 @@ export async function generateDesignConcept(chat_history_messages: ChatMessageWi
 		}
 	]);
 
-	const conceptMessage = await askGPTWithChatHistory(chat_history_messages, schema);
+	const conceptMessage: string = await askGPTWithChatHistory(chat_history_messages);
 
 	if (!conceptMessage) {
 		console.log('🎨 [design-concept] ❌ Failed to get design concept from AI');
@@ -43,6 +45,7 @@ export async function generateDesignConcept(chat_history_messages: ChatMessageWi
 // __________________________
 
 const NewImageItem = z.object({
+	type: z.literal('new_image').describe('The type of the item'),
 	description: z.string().describe('A description of the image'),
 	colors: z.array(z.string()).describe('The hex values of colors in the image'),
 	objects: z.array(z.string()).describe('The objects in the image'),
@@ -51,12 +54,16 @@ const NewImageItem = z.object({
 	style: z.string().describe('The style of the image'),
 	height: z.number().describe('The height of the image'),
 	width: z.number().describe('The width of the image'),
-	remove_background: z.boolean().describe('Whether to remove the background of the image')
+	remove_background: z
+		.boolean()
+		.describe('Whether to remove the background of the image in post porcessing after generation.')
 });
 const ExistingImageItem = z.object({
+	type: z.literal('existing_image').describe('The type of the item'),
 	id: z.string().describe('The ID of an existing image, MUST be exactly as seen before.')
 });
 const TextItem = z.object({
+	type: z.literal('text').describe('The type of the item'),
 	text: z.string().describe('The text to display'),
 	font: z.string().describe('The font to use'),
 	fitText: z
@@ -73,6 +80,7 @@ const TextItem = z.object({
 	underline: z.boolean().describe('Whether the text should be underlined')
 });
 const RectItem = z.object({
+	type: z.literal('rectangle').describe('The type of the item'),
 	fill: z.string().describe('The fill color of the item, in hex format'),
 	stroke: z.string().describe('The stroke color of the item, in hex format'),
 	strokeWidth: z.number().describe('The stroke width of the item')
@@ -118,6 +126,7 @@ export type TextItem = z.infer<typeof TextItem>;
 export type RectItem = z.infer<typeof RectItem>;
 // Define a type for the enriched image item
 type EnrichedImageItem = {
+	type: 'enriched_image';
 	id: string;
 	url: string;
 	description?: string;

@@ -2,6 +2,7 @@
 	import Artboard from '$lib/components/artboard/Artboard.svelte';
 	import AssistantPanel from '$lib/components/chat/AssistantPanel.svelte';
 	import * as Resizable from '$lib/components/ui/resizable';
+	
 </script>
 
 <div class="flex h-screen w-screen flex-1 flex-row overflow-hidden">

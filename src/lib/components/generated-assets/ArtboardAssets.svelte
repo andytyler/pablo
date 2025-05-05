@@ -14,14 +14,14 @@
 
 	<Separator />
 
-	{#if artboardStore.allImages?.length > 0}
+	{#if artboardStore.all_images?.length > 0}
 		<div class="mt-2">
 			<p class="mb-2 text-sm font-medium">
-				All Images ({artboardStore.allImages?.length})
+				All Images ({artboardStore.all_images?.length})
 			</p>
 			<ScrollArea.Root class="h-[300px]">
 				<div class="grid grid-cols-2 gap-3 p-1 md:grid-cols-3">
-					{#each artboardStore.allImages as image}
+					{#each artboardStore.all_images as image}
 						<Card class="relative overflow-hidden">
 							<div class="relative aspect-square w-full">
 								<img

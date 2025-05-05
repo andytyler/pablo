@@ -11,7 +11,7 @@ export type ChatMessageWithMeta = {
 };
 
 // HTML rendering types
-export type DesignItem = {
+export type DesignElement = {
 	id: string;
 	item: any;
 	x: number;
@@ -30,5 +30,5 @@ export type Design = {
 		width: number;
 		height: number;
 	};
-	items: DesignItem[];
+	items: DesignElement[];
 };

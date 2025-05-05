@@ -1,4 +1,3 @@
-import { addMessage } from '$lib/stores/messagesStore.svelte';
 import type { ChatMessageWithMeta } from '$lib/types';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -30,7 +29,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		console.log('🎨 [design-json/step1] Generating design structure');
 
 		let finalUserPrompt = prompt;
-		let concept = null;
+		let concept: string = '';
 
 		// STEP ONE: Generate design concept
 		if (!skip_concept) {
@@ -40,12 +39,6 @@ export const POST: RequestHandler = async ({ request }) => {
 				chat_history_messages
 			);
 			concept = await generateDesignConcept(chat_history_messages);
-			addMessage('assistant', [
-				{
-					role: 'assistant',
-					content: [{ type: 'text', text: `${prompt}\n\nDesign concept: ${concept}` }]
-				}
-			]);
 		}
 
 		// STEP TWO: Generate the structured design without processing images

@@ -17,8 +17,6 @@ export type ArtboardState = {
 	modified: boolean;
 	isLoading: boolean;
 	isWaiting: boolean;
-	design_json: string | null;
-	design_json_partial: any; // Partial design JSON during streaming
 	artboard_width: number;
 	artboard_height: number;
 	design_concept: string | null;
@@ -27,8 +25,14 @@ export type ArtboardState = {
 		skip_concept: boolean;
 		stream: boolean; // Enable streaming option
 	};
-	uploadedImages: ImageItem[]; // Array of image URLs uploaded via PasteImage component
-	allImages: ImageItem[];
+	images: {
+		all: ImageItem[];
+		uploaded: ImageItem[];
+		generated: ImageItem[];
+	}; // Array of image URLs uploaded via PasteImage component
+	uploaded_images: ImageItem[]; // Array of image URLs uploaded via PasteImage component
+	all_images: ImageItem[];
+	design_json: any | null;
 	image_enriched_design_json: StructuredDesignProcessedImageItems | null;
 	current_generation_id: string | null;
 };
@@ -42,7 +46,6 @@ const initialArtboardState: ArtboardState = {
 	// do this to store json and concept string and also use this to add a blur for the loaing state
 	// also add chats histroy
 	design_json: null,
-	design_json_partial: null,
 	design_concept: null,
 	chat_messages: [],
 	isLoading: false,
@@ -54,8 +57,13 @@ const initialArtboardState: ArtboardState = {
 		skip_concept: false,
 		stream: true // Enable streaming by default
 	},
-	uploadedImages: [], // Initialize as empty array
-	allImages: [], // Initialize as empty array
+	uploaded_images: [],
+	all_images: [],
+	images: {
+		all: [],
+		uploaded: [],
+		generated: []
+	},
 	image_enriched_design_json: null,
 	current_generation_id: null
 };
@@ -63,3 +71,19 @@ const initialArtboardState: ArtboardState = {
 export const artboardStore = $state<ArtboardState>(initialArtboardState);
 
 export const artboardHTMLStore = $state<{ html: string }>({ html: '' });
+
+export function initArtboardStore() {
+	const artboard_history = localStorage.getItem('artboard_history');
+	if (artboard_history) {
+		artboardStore.design_json = JSON.parse(artboard_history);
+	}
+}
+
+export function addImageToStore(type: 'uploaded' | 'generated', image: ImageItem) {
+	if (type === 'uploaded') {
+		artboardStore.uploaded_images.push(image);
+		artboardStore.all_images.push(image);
+	} else if (type === 'generated') {
+		artboardStore.all_images.push(image);
+	}
+}

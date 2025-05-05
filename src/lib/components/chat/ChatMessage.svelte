@@ -37,7 +37,7 @@
 {#if message.style === 'system'}
 	<!-- System message style -->
 	<div class="flex flex-col items-center">
-		<div class="max-w-[85%] rounded-lg bg-gray-100 p-1 text-center dark:bg-gray-600">
+		<div class="max-w-[85%] rounded-lg bg-red-500 p-1 text-center dark:bg-gray-600">
 			<div class="flex items-center justify-center gap-1">
 				<InfoIcon class="h-4 w-4" />
 				<span class="text-xs">
@@ -77,7 +77,7 @@
 							{content}
 						{:else if content.type === 'image_url'}
 							<img
-								class="object-fit m-2 h-full w-48 overflow-hidden rounded-lg"
+								class="object-fit m-2 h-full w-48 overflow-hidden rounded-lg shadow-sm"
 								src={content.image_url.url}
 								alt={content.image_url.url}
 							/>

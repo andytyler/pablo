@@ -4,7 +4,7 @@
 	import { Card } from '$lib/components/ui/card';
 	import * as ScrollArea from '$lib/components/ui/scroll-area';
 	import { supabase } from '$lib/connections/supabase';
-	import { artboardStore } from '$lib/stores/artboard-store.svelte';
+	import { addImageToStore, artboardStore } from '$lib/stores/artboard-store.svelte';
 	import { addMessage, removeMessage } from '$lib/stores/messagesStore.svelte';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
 	import Upload from 'lucide-svelte/icons/upload';
@@ -156,15 +156,12 @@
 						]
 					}
 				]);
-				// Add to uploaded images array
-				artboardStore.uploadedImages = [
-					...(artboardStore.uploadedImages || []),
-					{ url: urlData.signedUrl, description: `${file.name}`, id: added_message.id }
-				];
-				artboardStore.allImages = [
-					...(artboardStore.allImages || []),
-					{ url: urlData.signedUrl, description: `${file.name}`, id: added_message.id }
-				];
+				// store images
+				addImageToStore('uploaded', {
+					url: urlData.signedUrl,
+					description: `${file.name}`,
+					id: fileKey
+				});
 			}
 		} catch (err: any) {
 			console.error('Error uploading file:', err);
@@ -180,8 +177,8 @@
 	// Delete an image
 	async function deleteImage(id: string) {
 		try {
-			const imageToDelete = artboardStore.uploadedImages.find((image) => image.id === id);
-			const imageToDeleteFromAllImages = artboardStore.allImages.find((image) => image.id === id);
+			const imageToDelete = artboardStore.uploaded_images.find((image) => image.id === id);
+			const imageToDeleteFromAllImages = artboardStore.all_images.find((image) => image.id === id);
 
 			removeMessage(id);
 			if (!imageToDelete) {
@@ -199,7 +196,7 @@
 			}
 
 			// Remove from local array
-			artboardStore.uploadedImages = artboardStore.uploadedImages.filter(
+			artboardStore.uploaded_images = artboardStore.uploaded_images.filter(
 				(image) => image.id !== id
 			);
 		} catch (err: any) {
@@ -256,14 +253,14 @@
 		</div>
 	{/if}
 
-	{#if artboardStore.uploadedImages?.length > 0}
+	{#if artboardStore.uploaded_images?.length > 0}
 		<div class="mt-2">
 			<p class="mb-2 text-sm font-medium">
-				Uploaded Images ({artboardStore.uploadedImages?.length})
+				Uploaded Images ({artboardStore.uploaded_images?.length})
 			</p>
 			<ScrollArea.Root class="h-[200px]">
 				<div class="grid grid-cols-3 gap-2 p-1 md:grid-cols-4">
-					{#each artboardStore.uploadedImages as image}
+					{#each artboardStore.uploaded_images as image}
 						<Card class="relative overflow-hidden">
 							<img
 								src={image.url}
