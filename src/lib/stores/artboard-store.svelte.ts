@@ -75,7 +75,13 @@ export const artboardHTMLStore = $state<{ html: string }>({ html: '' });
 export function initArtboardStore() {
 	const artboard_history = localStorage.getItem('artboard_history');
 	if (artboard_history) {
-		artboardStore.design_json = JSON.parse(artboard_history);
+		artboardStore.image_enriched_design_json = JSON.parse(artboard_history);
+	}
+
+	const artboard_dimensions = localStorage.getItem('artboard_dimensions');
+	if (artboard_dimensions) {
+		artboardStore.artboard_width = JSON.parse(artboard_dimensions).width;
+		artboardStore.artboard_height = JSON.parse(artboard_dimensions).height;
 	}
 }
 

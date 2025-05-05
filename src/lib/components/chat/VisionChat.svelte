@@ -106,7 +106,22 @@
 
 	$effect(() => {
 		if (browser) {
-			localStorage.setItem('artboard_history', artboardStore.design_json || '');
+			localStorage.setItem(
+				'artboard_history',
+				JSON.stringify(artboardStore.image_enriched_design_json)
+			);
+		}
+	});
+
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem(
+				'artboard_dimensions',
+				JSON.stringify({
+					width: artboardStore.artboard_width,
+					height: artboardStore.artboard_height
+				})
+			);
 		}
 	});
 
