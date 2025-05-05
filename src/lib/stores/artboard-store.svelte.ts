@@ -25,6 +25,12 @@ export type ArtboardState = {
 		skip_concept: boolean;
 		stream: boolean; // Enable streaming option
 	};
+	// Artboard view controls
+	viewSettings: {
+		zoom: number;
+		panX: number;
+		panY: number;
+	};
 	images: {
 		all: ImageItem[];
 		uploaded: ImageItem[];
@@ -57,6 +63,12 @@ const initialArtboardState: ArtboardState = {
 		skip_concept: false,
 		stream: true // Enable streaming by default
 	},
+	// Initialize view settings
+	viewSettings: {
+		zoom: 1,
+		panX: 0,
+		panY: 0
+	},
 	uploaded_images: [],
 	all_images: [],
 	images: {
@@ -83,6 +95,12 @@ export function initArtboardStore() {
 		artboardStore.artboard_width = JSON.parse(artboard_dimensions).width;
 		artboardStore.artboard_height = JSON.parse(artboard_dimensions).height;
 	}
+
+	// Load view settings if available
+	const view_settings = localStorage.getItem('artboard_view_settings');
+	if (view_settings) {
+		artboardStore.viewSettings = JSON.parse(view_settings);
+	}
 }
 
 export function addImageToStore(type: 'uploaded' | 'generated', image: ImageItem) {
@@ -92,4 +110,31 @@ export function addImageToStore(type: 'uploaded' | 'generated', image: ImageItem
 	} else if (type === 'generated') {
 		artboardStore.all_images.push(image);
 	}
+}
+
+// Reset artboard view to default
+export function resetArtboardView() {
+	artboardStore.viewSettings.zoom = 1;
+	artboardStore.viewSettings.panX = 0;
+	artboardStore.viewSettings.panY = 0;
+
+	// Save to localStorage
+	localStorage.setItem('artboard_view_settings', JSON.stringify(artboardStore.viewSettings));
+}
+
+// Update zoom level
+export function updateZoom(newZoom: number) {
+	artboardStore.viewSettings.zoom = Math.max(0.3, Math.min(newZoom, 3));
+
+	// Save to localStorage
+	localStorage.setItem('artboard_view_settings', JSON.stringify(artboardStore.viewSettings));
+}
+
+// Update pan position
+export function updatePan(x: number, y: number) {
+	artboardStore.viewSettings.panX = x;
+	artboardStore.viewSettings.panY = y;
+
+	// Save to localStorage
+	localStorage.setItem('artboard_view_settings', JSON.stringify(artboardStore.viewSettings));
 }

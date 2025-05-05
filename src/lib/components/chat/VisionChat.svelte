@@ -12,6 +12,7 @@
 	import Lightbulb from '@lucide/svelte/icons/lightbulb';
 	import Loader2 from '@lucide/svelte/icons/loader-2';
 	import Paintbrush from '@lucide/svelte/icons/paintbrush';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { onMount } from 'svelte';
 	import type { StructuredDesign } from '../../../routes/api/generate-design/step1/design';
 	import { Button } from '../ui/button';
@@ -397,7 +398,7 @@
 
 	<!-- Input area - fixed at bottom of container -->
 	<div class="flex h-full flex-1 flex-col p-2">
-		<div class="flex-0 flex flex-col rounded-md border-2 border-border p-2">
+		<div class="flex-0 flex flex-col rounded-md border-2 border-border bg-background p-2">
 			<form
 				onsubmit={(e) => {
 					executeDessignPipeline();
@@ -419,7 +420,8 @@
 							clearMessages();
 						}}
 					>
-						CLEAR
+						<Trash2 class="mr-0.5 h-3 w-3" />
+						Clear Chat
 					</Button>
 					<!-- Skip Concept -->
 					<div class="flex flex-row gap-2">
