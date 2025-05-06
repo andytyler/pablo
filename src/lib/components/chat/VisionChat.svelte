@@ -256,6 +256,7 @@
 						return {
 							...item,
 							item: {
+								type: 'enriched_image',
 								id: item.item.id,
 								url: existingImage.url,
 								description: existingImage.description
