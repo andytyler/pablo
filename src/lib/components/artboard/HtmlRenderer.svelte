@@ -1,7 +1,7 @@
 <script lang="ts">
 	// import { imageEnrichedDesignJsonToHtml } from '$lib/connections/transformers'; // No longer needed directly here
 	import { artboardStore } from '$lib/stores/artboard-store.svelte'; // artboardHTMLStore is no longer primary here
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import EditbleWrapper from './EditbleWrapper.svelte';
 	// Import the new wrapper
 
@@ -12,10 +12,22 @@
 	}>();
 
 	// References
-	let canvasContainerId = 'canvas-container';
+	let canvasContainerId = 'canvas-container-' + Math.random().toString(36).substring(2, 9); // Unique ID for multiple renderers if ever needed
 
 	// The design JSON is now directly used for rendering items
 	let designJson = $derived(artboardStore.image_enriched_design_json);
+
+	// Function for handling clicks on the artboard background to deselect items
+	function handleArtboardBackgroundClick(event: MouseEvent) {
+		// If the click is directly on this container (not bubbled from a child like EditbleWrapper which stops propagation)
+		// then deselect any currently selected item.
+		if (event.target === event.currentTarget) {
+			if (artboardStore.selectedItemIndex !== null) {
+				artboardStore.selectedItemIndex = null;
+				// console.log('Artboard background clicked, deselected item.');
+			}
+		}
+	}
 
 	// Function to fit text within containers (might still be useful if text elements within EditbleWrapper need it,
 	// or could be moved/adapted into EditbleWrapper if direct DOM manipulation for text fitting is still desired there)
@@ -57,25 +69,32 @@
 			}
 		};
 	});
+
+	onDestroy(() => {
+		// const container = document.getElementById(canvasContainerId);
+		// if (container) { /* ... disconnect observer if needed ... */ }
+	});
 </script>
 
 {#if designJson && designJson.items && designJson.items.length > 0}
 	<div
-		class="design-canvas-area relative flex overflow-hidden"
+		class="design-canvas-area relative flex overflow-hidden bg-gray-100 dark:bg-gray-900"
 		id={canvasContainerId}
 		style="width: {canvasWidth}px; height: {canvasHeight}px; background-color: {designJson.background ||
 			'#ffffff'};"
+		onclick={handleArtboardBackgroundClick}
 	>
-		{#each designJson.items as item, index (item.item.id || index)}
+		{#each designJson.items as item, index ((item.item as { id?: string })?.id || index)}
 			<!-- Use item.item.id for images if available, or index as fallback key -->
 			<EditbleWrapper itemData={item} itemIndex={index} />
 		{/each}
 	</div>
 {:else}
 	<div
-		class="relative flex items-center justify-center overflow-hidden"
+		class="design-canvas-area relative flex items-center justify-center overflow-hidden bg-gray-100 dark:bg-gray-900"
 		id={canvasContainerId}
 		style="width: {canvasWidth}px; height: {canvasHeight}px"
+		onclick={handleArtboardBackgroundClick}
 	>
 		{#if artboardStore.isLoading}
 			<div class="text-center text-muted-foreground">Loading...</div>
@@ -91,8 +110,7 @@
 
 <style>
 	.design-canvas-area {
-		/* Ensures that direct children (EditbleWrapper instances) can be positioned absolutely */
 		position: relative;
+		/* Minimal essential style. All other comments and example styles removed. */
 	}
-	/* Any other specific styles for HtmlRenderer itself */
 </style>

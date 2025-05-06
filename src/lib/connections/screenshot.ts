@@ -3,12 +3,20 @@
  * @param designSelector - CSS selector for the design element to capture
  * @returns Promise that resolves to an object containing the image URL or error
  */
+import { artboardStore } from '$lib/stores/artboard-store.svelte';
 import { getImageUrl, uploadImage } from './supabase';
 
 export async function captureCanvasScreenshot(
 	designSelector: string
 ): Promise<{ url: string | null; error: Error | null }> {
 	try {
+		// Deselect any currently selected item
+		if (artboardStore.selectedItemIndex !== null) {
+			artboardStore.selectedItemIndex = null;
+			// Wait for the DOM to update after deselection and allow time for potential text reflows
+			await new Promise((resolve) => setTimeout(resolve, 100)); // Increased delay to 100ms
+		}
+
 		// Get the design element
 		const designElement = document.querySelector(designSelector);
 

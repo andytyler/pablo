@@ -23,6 +23,48 @@
 	let startDragY = $state(0);
 	let artboardContainer: HTMLElement;
 
+	// Function to handle clicks on the artboard background itself
+	function handleArtboardBackgroundClick(event: MouseEvent) {
+		// Ensure the click is directly on the artboardContainer and not its children
+		// and that we are not in a dragging operation (though onclick typically doesn't fire after a drag, this is an extra check)
+		if (event.target === artboardContainer && !isDragging) {
+			if (artboardStore.selectedItemIndex !== null) {
+				artboardStore.selectedItemIndex = null;
+			}
+		}
+	}
+
+	// --- Google Fonts Loading ---
+	let uniqueFonts = $derived(() => {
+		const design = artboardStore.image_enriched_design_json;
+		if (!design || !design.items || design.items.length === 0) {
+			return [];
+		}
+		const allFonts = design.items
+			.filter((itemWrapper) => {
+				if (itemWrapper && itemWrapper.item && itemWrapper.item.type === 'text') {
+					// Assuming TextItem might have a font property
+					const font = (itemWrapper.item as { font?: string }).font;
+					return typeof font === 'string' && font.trim() !== '';
+				}
+				return false;
+			})
+			.map((itemWrapper) => (itemWrapper.item as { font: string }).font);
+
+		return [...new Set(allFonts)];
+	});
+
+	let googleFontsLink = $derived(() => {
+		if (!uniqueFonts || uniqueFonts().length === 0) {
+			return '';
+		}
+		const fontFamilies = uniqueFonts()
+			.map((font: string) => font.replace(/ /g, '+'))
+			.join('&family=');
+		return `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
+	});
+	// --- End Google Fonts Loading ---
+
 	// Reset zoom and pan
 	function resetView() {
 		resetArtboardView();
@@ -91,12 +133,19 @@
 	});
 </script>
 
+<svelte:head>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+	<link href={googleFontsLink()} rel="stylesheet" />
+</svelte:head>
+
 <div
 	aria-label="Artboard"
 	role="region"
 	class="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-background"
 	bind:this={artboardContainer}
 	onmousedown={handleMouseDown}
+	onclick={handleArtboardBackgroundClick}
 	style="cursor: {isDragging ? 'grabbing' : 'grab'};"
 >
 	<!-- Dotted background pattern -->

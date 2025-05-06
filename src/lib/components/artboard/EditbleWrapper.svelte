@@ -10,6 +10,7 @@
 	} from '../../../routes/api/generate-design/step1/design';
 	// For client-side only DOM manipulations
 
+	import { Blend } from 'lucide-svelte';
 	// Svelte 5 Props
 	type ItemInStore = StructuredDesignProcessedImageItems['items'][number];
 	let { itemData, itemIndex }: { itemData: ItemInStore; itemIndex: number } = $props();
@@ -31,6 +32,15 @@
 	);
 	let textElementRef: HTMLDivElement | null = $state(null); // For bind:this
 
+	// --- Image Toolbar State ---
+	let toolbarImageUrl = $state('');
+	let toolbarImageDescription = $state('');
+
+	// --- Rectangle Toolbar State ---
+	let toolbarRectFill = $state('#CCCCCC');
+	let toolbarRectStroke = $state('#333333');
+	let toolbarRectStrokeWidth = $state(1);
+
 	$effect(() => {
 		if (itemData.item.type === 'text') {
 			const textItem = itemData.item as TextItem;
@@ -43,6 +53,15 @@
 			toolbarUnderline = textItem.underline;
 			toolbarTextAlign = textItem.align;
 			toolbarFitText = textItem.fitText === undefined ? true : textItem.fitText; // Default true if undefined
+		} else if (itemData.item.type === 'enriched_image') {
+			const imageItem = itemData.item as EnrichedImageItem;
+			toolbarImageUrl = imageItem.url;
+			toolbarImageDescription = imageItem.description || '';
+		} else if (itemData.item.type === 'rectangle') {
+			const rectItem = itemData.item as RectItem;
+			toolbarRectFill = rectItem.fill;
+			toolbarRectStroke = rectItem.stroke;
+			toolbarRectStrokeWidth = rectItem.strokeWidth;
 		}
 		currentX = itemData.x;
 		currentY = itemData.y;
@@ -113,9 +132,14 @@
 				textItem.align = toolbarTextAlign;
 				textItem.fitText = toolbarFitText;
 			} else if (itemToUpdate.item.type === 'enriched_image') {
-				// TODO: Add image properties (e.g., description, or if URL changes)
+				const imageItem = itemToUpdate.item as EnrichedImageItem;
+				imageItem.url = toolbarImageUrl;
+				imageItem.description = toolbarImageDescription;
 			} else if (itemToUpdate.item.type === 'rectangle') {
-				// TODO: Add rect properties (fill, stroke)
+				const rectItem = itemToUpdate.item as RectItem;
+				rectItem.fill = toolbarRectFill;
+				rectItem.stroke = toolbarRectStroke;
+				rectItem.strokeWidth = toolbarRectStrokeWidth;
 			}
 
 			updatedItems[itemIndex] = itemToUpdate;
@@ -129,15 +153,12 @@
 
 	// --- Interaction Handlers ---
 	function handleClick(event: MouseEvent) {
-		event.stopPropagation(); // Important to prevent artboard deselection if clicking on element itself
+		event.stopPropagation();
 		if (!isResizing && !isDragging) {
-			// Set this item as selected in the global store
-			// This will trigger the $derived isSelected state for all wrappers.
 			if (artboardStore.selectedItemIndex !== itemIndex) {
 				artboardStore.selectedItemIndex = itemIndex;
 			}
 		}
-		// console.log('Element clicked:', itemData.item.type, itemIndex, artboardStore.selectedItemIndex);
 	}
 
 	function handleTextChange(event: Event) {
@@ -351,13 +372,9 @@
 	// --- Lifecycle ---
 	onMount(() => {
 		console.log('EditableWrapper mounted for:', itemData.item.type, itemIndex);
-		// Add document click listener for deselection if this element is selected
-		// This will be refined for better global handling later.
-		window.addEventListener('click', handleGlobalClick);
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('click', handleGlobalClick);
 		if (isDragging) {
 			window.removeEventListener('mousemove', onDragMouseMove);
 			window.removeEventListener('mouseup', onDragMouseUp);
@@ -372,20 +389,6 @@
 		}
 	});
 
-	function handleGlobalClick(event: MouseEvent) {
-		// If the click is outside this component and its toolbar/handles, and this item is selected, deselect it.
-		// This is a basic implementation. A more robust solution might involve checking if event.target is outside the artboard area.
-		const wrapperElement = document.querySelector(`[data-item-index="${itemIndex}"]`); // Requires adding data-item-index to wrapper
-		if (isSelected && wrapperElement && !wrapperElement.contains(event.target as Node)) {
-			// A bit of a hack: if we are clicking another selectable item, let its own handleClick manage selection.
-			// This avoids immediate deselection then reselection. A proper solution would use a centralized service for clicks.
-			const targetSelectable = (event.target as HTMLElement).closest('.editable-wrapper-class'); // Requires class on wrapper
-			if (!targetSelectable || targetSelectable === wrapperElement) {
-				// artboardStore.selectedItemIndex = null; // This is the goal
-			}
-		}
-	}
-
 	// --- Styles for the wrapper and content ---
 	const wrapperStyle = $derived(() => {
 		return `
@@ -395,7 +398,6 @@
 			width: ${currentWidth}px;
 			height: ${currentHeight}px;
 			transform: rotate(${currentRotation}deg);
-			opacity: ${editableOpacity / 100};
 			border: ${isSelected ? '2px dashed blue' : '1px solid transparent'};
 			cursor: ${isDragging ? 'grabbing' : isSelected && !activeHandle ? 'grab' : activeHandle ? getCursorForHandle(activeHandle) : 'pointer'};
 			user-select: none;
@@ -404,6 +406,11 @@
 	});
 
 	const contentStyleBase = `width: 100%; height: 100%; display: block; box-sizing: border-box; pointer-events: none;`;
+
+	// New derived style for the actual content element, including its opacity
+	const actualContentStyle = $derived(() => {
+		return `${contentStyleBase} opacity: ${editableOpacity / 100};`;
+	});
 
 	// Helper to get specific item type for cleaner access in template
 	const itemValue = $derived(() => itemData.item);
@@ -498,9 +505,9 @@
 			{@const textItem = itemValue() as TextItem}
 			<div
 				bind:this={textElementRef}
-				contenteditable={isSelected && !isDragging && !isResizing}
+				contenteditable={isSelected}
 				style={`
-					${contentStyleBase}
+					${actualContentStyle()}
 					pointer-events: ${isSelected && !isDragging && !isResizing ? 'auto' : 'none'};
 					font-family: ${toolbarFontFamily};
 					color: ${toolbarFontColor};
@@ -510,7 +517,7 @@
 					text-decoration: ${toolbarUnderline ? 'underline' : 'none'};
 					text-align: ${toolbarTextAlign};
 					white-space: ${textItem.wrap ? 'normal' : 'nowrap'};
-					overflow: hidden; /* Crucial for fitText scrollHeight/scrollWidth check */
+					overflow: hidden; 
 					display: flex;
 					align-items: center;
 					justify-content: ${toolbarTextAlign === 'center' ? 'center' : toolbarTextAlign === 'right' ? 'flex-end' : 'flex-start'};
@@ -525,19 +532,17 @@
 			<img
 				src={imageItem.url}
 				alt={imageItem.description || 'Image'}
-				style="{contentStyleBase} object-fit: cover;"
+				style={`${actualContentStyle()} object-fit: cover;`}
 				draggable="false"
 			/>
 		{:else if itemValue().type === 'rectangle'}
 			{@const rectItem = itemValue() as RectItem}
 			<div
-				style="{contentStyleBase}
-						background-color: {rectItem.fill};
-						border: {rectItem.strokeWidth}px solid {rectItem.stroke};"
+				style={`${actualContentStyle()} background-color: ${rectItem.fill}; border: ${rectItem.strokeWidth}px solid ${rectItem.stroke};`}
 			></div>
 		{:else if itemValue().type === 'new_image' || itemValue().type === 'existing_image'}
 			<div
-				style="{contentStyleBase} background-color: #eee; display:flex; align-items:center; justify-content:center; text-align:center; color: #777; font-size: 0.8em; padding: 5px;"
+				style={`${actualContentStyle()} background-color: #eee; display:flex; align-items:center; justify-content:center; text-align:center; color: #777; font-size: 0.8em; padding: 5px;`}
 			>
 				{#if itemValue().type === 'new_image'}
 					New Image: {(itemValue() as any).description || 'Generating...'}
@@ -617,116 +622,133 @@
 			</div>
 
 			<div
-				class="toolbar"
-				style="position: absolute; top: -40px; left: 0; background: #333; color: white; border-radius: 4px; padding: 5px; z-index: 10; white-space: nowrap; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: auto; max-width: 400px;"
+				class="absolute -top-32 right-0 z-[999] flex max-w-sm transform flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap rounded-lg bg-card/80 px-3 py-2 text-card-foreground shadow-2xl ring-1 backdrop-blur-sm"
+				style={`transform: rotate(${-currentRotation}deg); transform-origin: center center;`}
 			>
-				<label
-					class="toolbar-item"
-					style="font-size: 0.8em; display:flex; align-items:center; gap: 4px;"
-				>
-					Opacity:
+				<label class="flex items-center gap-1 text-xs">
+					<Blend class="h-4 w-4" />
 					<input
-						type="range"
+						type="number"
 						min="0"
 						max="100"
 						bind:value={editableOpacity}
 						onblur={handleOpacityInputBlur}
-						style="width: 60px;"
+						class="h-4 w-full cursor-pointer rounded-lg bg-gray-700 accent-blue-500"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}
 					/>
-					<span style="width: 25px; text-align: right;">{editableOpacity}%</span>
+					<span class="w-7 text-right text-gray-300">{editableOpacity}%</span>
 				</label>
 
 				{#if itemValue().type === 'text'}
-					<span class="toolbar-divider"></span>
-					<label class="toolbar-item"
+					<div class="h-5 border-l border-border"></div>
+					<label class="flex items-center gap-1 text-xs"
 						>Font: <input
 							type="text"
 							bind:value={toolbarFontFamily}
 							oninput={handleToolbarInputChange}
-							style="width: 80px;"
+							class="w-20 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 							onmousedown={(e: MouseEvent) => e.stopPropagation()}
 						/></label
 					>
-					<label class="toolbar-item"
+					<label class="flex items-center gap-1 text-xs"
 						>Size: <input
 							type="number"
 							bind:value={toolbarFontSize}
 							oninput={handleToolbarInputChange}
-							style="width: 40px;"
-							onmousedown={(e: MouseEvent) => e.stopPropagation()}
+							class="w-12 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
 							disabled={toolbarFitText}
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}
 						/></label
 					>
-					<label class="toolbar-item"
+					<label class="flex items-center gap-0.5 text-xs"
 						>Color: <input
 							type="color"
 							bind:value={toolbarFontColor}
 							oninput={handleToolbarInputChange}
-							style="width: 30px; padding: 1px;"
+							class="h-5 w-6 cursor-pointer rounded border border-gray-600 bg-transparent"
 							onmousedown={(e: MouseEvent) => e.stopPropagation()}
 						/></label
 					>
-					<span class="toolbar-divider"></span>
+
+					<div class="h-5 border-l border-gray-600"></div>
 					<button
-						class="toolbar-button"
 						title="Bold"
 						onclick={toggleBold}
-						style="font-weight: {toolbarBold ? 'bold' : 'normal'};"
+						class:active-tool={toolbarBold}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarBold
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>B</button
 					>
 					<button
-						class="toolbar-button"
 						title="Italic"
 						onclick={toggleItalic}
-						style="font-style: {toolbarItalic ? 'italic' : 'normal'};"
+						class:active-tool={toolbarItalic}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarItalic
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>I</button
 					>
 					<button
-						class="toolbar-button"
 						title="Underline"
 						onclick={toggleUnderline}
-						style="text-decoration: {toolbarUnderline ? 'underline' : 'none'};"
+						class:active-tool={toolbarUnderline}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarUnderline
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>U</button
 					>
-					<span class="toolbar-divider"></span>
+
+					<div class="h-5 border-l border-gray-600"></div>
 					<button
-						class="toolbar-button"
 						title="Align Left"
 						onclick={() => setTextAlign('left')}
 						class:active={toolbarTextAlign === 'left'}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
+						'left'
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>L</button
 					>
 					<button
-						class="toolbar-button"
 						title="Align Center"
 						onclick={() => setTextAlign('center')}
 						class:active={toolbarTextAlign === 'center'}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
+						'center'
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>C</button
 					>
 					<button
-						class="toolbar-button"
 						title="Align Right"
 						onclick={() => setTextAlign('right')}
 						class:active={toolbarTextAlign === 'right'}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
+						'right'
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>R</button
 					>
-					<span class="toolbar-divider"></span>
+
+					<div class="h-5 border-l border-gray-600"></div>
 					<button
-						class="toolbar-button"
 						title="Fit Text to Box"
 						onclick={toggleFitText}
 						class:active={toolbarFitText}
+						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarFitText
+							? 'bg-blue-600 text-white'
+							: 'bg-gray-600 text-gray-300'}"
 						onmousedown={(e: MouseEvent) => e.stopPropagation()}>Fit</button
 					>
 				{/if}
 
-				<span class="toolbar-divider"></span>
+				<div class="h-5 border-l border-gray-600"></div>
 				<button
 					title="Delete Item"
 					onclick={deleteItem}
 					onmousedown={(e: MouseEvent) => e.stopPropagation()}
-					class="toolbar-button delete-button"
+					class="px-1 py-0.5 text-lg text-gray-300 hover:text-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
 				>
 					🗑️
 				</button>
@@ -755,62 +777,10 @@ TODO:
 -->
 
 <style>
-	/* CSS rules temporarily commented out to debug parser error */
-
-	.toolbar-item {
-		font-size: 0.8em;
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-	.toolbar-button {
-		background: #555;
-		color: white;
-		border: 1px solid #777;
-		padding: 4px 6px;
-		border-radius: 3px;
-		cursor: pointer;
-		line-height: 1;
-	}
-	.toolbar-button:hover {
-		background: #666;
-	}
-	.toolbar-button.active {
-		background: #007bff;
-		color: white;
-		border-color: #0056b3;
-	}
-
-	.toolbar-button.delete-button {
-		background: transparent;
-		font-size: 1.2em;
-	}
-	.toolbar-button.delete-button:hover {
-		background: #c00;
-	}
-	.toolbar-divider {
-		border-left: 1px solid #555;
-		margin-left: 4px;
-		padding-left: 8px;
-		align-self: stretch;
-	}
-	.toolbar input[type='text'],
-	.toolbar input[type='number'] {
-		background-color: #444;
-		color: white;
-		border: 1px solid #666;
-		border-radius: 2px;
-		padding: 2px 4px;
-		font-size: 0.9em;
-	}
-	.toolbar input[type='color'] {
-		background-color: transparent;
-		border: 1px solid #666;
-		padding: 0;
-		border-radius: 2px;
-		height: 20px;
-	}
+	/* Remove all previous .toolbar-item, .toolbar-button, etc. styles as Tailwind is used directly */
+	/* Styles for specific interactive states not easily done with pure Tailwind variants, or for consistency */
 	.rotation-handle:hover {
 		background-color: darkblue;
 	}
+	/* Tailwind's focus:ring is used, so explicit focus styles might not be needed unless for very custom cases */
 </style>

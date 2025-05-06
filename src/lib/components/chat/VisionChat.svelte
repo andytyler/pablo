@@ -330,7 +330,7 @@
 								return {
 									...image_element,
 									item: {
-										...image_element.item,
+										type: 'enriched_image' as const,
 										id: imageData.image_id,
 										url: imageData.image_url,
 										description: imageData.image_description
