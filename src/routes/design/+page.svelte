@@ -1,19 +1,13 @@
 <script lang="ts">
-	import { Layer, Rect, Stage } from 'svelte-konva';
 </script>
 
-<Stage config={{ width: window.innerWidth, height: window.innerHeight }}>
-	<Layer>
-		<Rect config={{ x: 100, y: 100, width: 400, height: 200, fill: 'blue' }} />
-		<Rect
-			config={{
-				x: 400,
-				y: 150,
-				width: 300,
-				height: 300,
-				fill: 'red',
-				draggable: true
-			}}
-		/>
-	</Layer>
-</Stage>
+<div class="flex h-screen w-full flex-col">
+	<div class="flex flex-row items-center justify-between border-b p-4">
+		<h1 class="text-xl font-bold">Design Editor</h1>
+		<div class="flex flex-row gap-2"></div>
+	</div>
+
+	<div class="flex flex-1 overflow-hidden">
+		<!-- Renderer goes here -->
+	</div>
+</div>
