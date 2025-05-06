@@ -42,6 +42,7 @@ export type ArtboardState = {
 	image_enriched_design_json: StructuredDesignProcessedImageItems | null;
 	fabricCanvasObjectsArray: fabric.Object[] | null; // For storing Fabric.js canvas state
 	current_generation_id: string | null;
+	selectedItemIndex: number | null;
 };
 
 // Create the initial state
@@ -79,7 +80,8 @@ const initialArtboardState: ArtboardState = {
 	},
 	image_enriched_design_json: null,
 	fabricCanvasObjectsArray: null,
-	current_generation_id: null
+	current_generation_id: null,
+	selectedItemIndex: null
 };
 
 export const artboardStore = $state<ArtboardState>(initialArtboardState);

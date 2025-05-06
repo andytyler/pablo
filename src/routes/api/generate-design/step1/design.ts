@@ -72,6 +72,7 @@ const TextItem = z.object({
 	fontWeight: z.number().describe('The font weight to use'),
 	fontColor: z.string().describe('The font color to use'),
 	fontStyle: z.string().describe('The font style to use'),
+	fontSize: z.number().describe('The font size to use. If fitText is true, this will be ignored.'),
 	width: z.number().describe('The width of the text box'),
 	align: z.enum(['left', 'center', 'right']).describe('The alignment of the text in the textbox'),
 	wrap: z.boolean().describe('Whether the text should wrap'),

@@ -3,7 +3,7 @@
 	import PasteImage from '$lib/components/pasteImage/PasteImage.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { artboardHTMLStore, artboardStore } from '$lib/stores/artboard-store.svelte';
+	import { artboardStore } from '$lib/stores/artboard-store.svelte';
 	import VisionChat from './VisionChat.svelte';
 
 	// Props using Svelte 5 syntax
@@ -29,8 +29,8 @@
 						Current Size: {artboardStore.artboard_width} × {artboardStore.artboard_height}px
 					</p>
 					<h2 class="mb-2 text-sm font-medium">Current Design JSON</h2>
-					<pre class="my-2 h-full w-full flex-1 overflow-scroll rounded-md bg-muted p-2 text-xs">
-						{artboardHTMLStore.html || 'No design yet'}
+					<pre class="text-xs">
+						{JSON.stringify(artboardStore.image_enriched_design_json, null, 2) || 'No design yet'}
 					</pre>
 				</div>
 			</div>

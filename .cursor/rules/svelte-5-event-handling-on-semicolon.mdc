@@ -10,3 +10,6 @@ And also:
 > <button onclick="alert('hello')">...</button>
 > ```
 > This is not recommended, and is no longer possible in Svelte 5, where properties like onclick replace on:click as the mechanism for adding event handlers.
+___
+
+{/* this style of comment is never alowed as in svelte files it causes errors, use html comments instead or dont comment for non important things */}
