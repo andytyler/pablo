@@ -125,7 +125,7 @@ export type ExistingImageItem = z.infer<typeof ExistingImageItem>;
 export type TextItem = z.infer<typeof TextItem>;
 export type RectItem = z.infer<typeof RectItem>;
 // Define a type for the enriched image item
-type EnrichedImageItem = {
+export type EnrichedImageItem = {
 	type: 'enriched_image';
 	id: string;
 	url: string;
