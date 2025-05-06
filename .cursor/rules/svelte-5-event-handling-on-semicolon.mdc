@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Event attributes replace event directives: Instead of on:click={handler} you write onclick={handler}. For backwards compatibility the on:event syntax is still supported and behaves the same as in Svelte 4.
+And also:
+> In Svelte 4, it was possible to specify event attributes on HTML elements as a string:
+> ```html
+> <button onclick="alert('hello')">...</button>
+> ```
+> This is not recommended, and is no longer possible in Svelte 5, where properties like onclick replace on:click as the mechanism for adding event handlers.

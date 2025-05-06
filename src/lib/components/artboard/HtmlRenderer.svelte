@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { imageEnrichedDesignJsonToHtml } from '$lib/connections/transformers';
-	// Component to render HTML content directly in the design artboard
-	// This will accept HTML string and display it in a container
-	import { artboardHTMLStore, artboardStore } from '$lib/stores/artboard-store.svelte';
+	// import { imageEnrichedDesignJsonToHtml } from '$lib/connections/transformers'; // No longer needed directly here
+	import { artboardStore } from '$lib/stores/artboard-store.svelte'; // artboardHTMLStore is no longer primary here
 	import { onMount } from 'svelte';
+	import EditbleWrapper from './EditbleWrapper.svelte';
+	// Import the new wrapper
 
 	// Use $props() for Svelte 5 with proper typing
-	let { canvasWidth = 500, canvasHeight = 700 } = $props<{
+	let { canvasWidth = 800, canvasHeight = 600 } = $props<{
 		canvasWidth?: number;
 		canvasHeight?: number;
 	}>();
@@ -14,67 +14,36 @@
 	// References
 	let canvasContainerId = 'canvas-container';
 
-	$effect(() => {
-		if (!artboardStore.image_enriched_design_json) return;
-		artboardHTMLStore.html = imageEnrichedDesignJsonToHtml(
-			artboardStore.image_enriched_design_json
-		);
-	});
+	// The design JSON is now directly used for rendering items
+	let designJson = $derived(artboardStore.image_enriched_design_json);
 
-	// Function to fit text within containers
+	// Function to fit text within containers (might still be useful if text elements within EditbleWrapper need it,
+	// or could be moved/adapted into EditbleWrapper if direct DOM manipulation for text fitting is still desired there)
+	// For now, let's keep it, but its usage context changes.
 	function fitTextInContainers() {
-		// Find all elements with the fit-text class
-		const textElements = document.querySelectorAll('.fit-text');
+		const textElements = document.querySelectorAll('.fit-text-via-script'); // Example class, if needed
 
 		textElements.forEach((el) => {
 			const element = el as HTMLElement;
 			const container = element;
-			const text = element.textContent || '';
-
-			// Start with a base font size and adjust
-			let fontSize = 100; // in percentage
-			element.style.fontSize = `${fontSize}%`;
-
-			// Binary search to find the optimal font size
-			let minSize = 10;
-			let maxSize = 1000;
-
-			while (maxSize - minSize > 1) {
-				fontSize = Math.floor((minSize + maxSize) / 2);
-				element.style.fontSize = `${fontSize}%`;
-
-				// Check if text overflows
-				if (
-					container.scrollHeight > container.clientHeight ||
-					container.scrollWidth > container.clientWidth
-				) {
-					maxSize = fontSize;
-				} else {
-					minSize = fontSize;
-				}
-			}
-
-			// Set the final size slightly smaller to ensure it fits
-			element.style.fontSize = `${minSize * 0.95}%`;
+			// ... (rest of the fitTextInContainers logic)
+			// This function may need significant rework or removal if text fitting is handled entirely by CSS or within EditbleWrapper
 		});
 	}
 
-	// Watch for content changes
-	$effect(() => {
-		if (artboardHTMLStore.html) {
-			// Use setTimeout to ensure the DOM has updated
-			setTimeout(fitTextInContainers, 0);
-		}
-	});
+	// Watch for content changes - this might not be needed in the same way
+	// $effect(() => {
+	// 	if (artboardHTMLStore.html) { // We are not using artboardHTMLStore.html anymore
+	// 		setTimeout(fitTextInContainers, 0);
+	// 	}
+	// });
 
 	// Resize handling
 	onMount(() => {
-		// Initial text fitting
-		setTimeout(fitTextInContainers, 100);
+		// setTimeout(fitTextInContainers, 100); // Initial call if still used
 
-		// Adjust text on window resize
 		const resizeObserver = new ResizeObserver(() => {
-			fitTextInContainers();
+			// fitTextInContainers(); // Call if still used
 		});
 
 		const container = document.getElementById(canvasContainerId);
@@ -90,13 +59,17 @@
 	});
 </script>
 
-{#if artboardHTMLStore.html}
+{#if designJson && designJson.items && designJson.items.length > 0}
 	<div
-		class="relative flex overflow-hidden"
+		class="design-canvas-area relative flex overflow-hidden"
 		id={canvasContainerId}
-		style="width: {canvasWidth}px; height: {canvasHeight}px"
+		style="width: {canvasWidth}px; height: {canvasHeight}px; background-color: {designJson.background ||
+			'#ffffff'};"
 	>
-		{@html artboardHTMLStore.html}
+		{#each designJson.items as item, index (item.item.id || index)}
+			<!-- Use item.item.id for images if available, or index as fallback key -->
+			<EditbleWrapper itemData={item} itemIndex={index} />
+		{/each}
 	</div>
 {:else}
 	<div
@@ -109,7 +82,17 @@
 		{:else if artboardStore.isWaiting}
 			<div class="text-center text-muted-foreground">Waiting...</div>
 		{:else}
-			<div class="text-center text-muted-foreground">New Artboard</div>
+			<div class="text-center text-muted-foreground">
+				New Artboard - Start by describing your design!
+			</div>
 		{/if}
 	</div>
 {/if}
+
+<style>
+	.design-canvas-area {
+		/* Ensures that direct children (EditbleWrapper instances) can be positioned absolutely */
+		position: relative;
+	}
+	/* Any other specific styles for HtmlRenderer itself */
+</style>

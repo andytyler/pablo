@@ -40,6 +40,7 @@ export type ArtboardState = {
 	all_images: ImageItem[];
 	design_json: any | null;
 	image_enriched_design_json: StructuredDesignProcessedImageItems | null;
+	fabricCanvasObjectsArray: fabric.Object[] | null; // For storing Fabric.js canvas state
 	current_generation_id: string | null;
 };
 
@@ -77,6 +78,7 @@ const initialArtboardState: ArtboardState = {
 		generated: []
 	},
 	image_enriched_design_json: null,
+	fabricCanvasObjectsArray: null,
 	current_generation_id: null
 };
 
