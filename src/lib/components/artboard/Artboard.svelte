@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { Button } from '$lib/components/ui/button';
 	import {
 		artboardStore,
@@ -25,11 +26,14 @@
 
 	// Function to handle clicks on the artboard background itself
 	function handleArtboardBackgroundClick(event: MouseEvent) {
-		// Ensure the click is directly on the artboardContainer and not its children
-		// and that we are not in a dragging operation (though onclick typically doesn't fire after a drag, this is an extra check)
-		if (event.target === artboardContainer && !isDragging) {
-			if (artboardStore.selectedItemIndex !== null) {
-				artboardStore.selectedItemIndex = null;
+		if (browser) {
+			let gridDots: HTMLElement | null = document.getElementById('grid-dots');
+			// Ensure the click is directly on the artboardContainer and not its children
+			// and that we are not in a dragging operation (though onclick typically doesn't fire after a drag, this is an extra check)
+			if (event.target === artboardContainer || event.target === gridDots) {
+				if (artboardStore.selectedItemIndex !== null) {
+					artboardStore.selectedItemIndex = null;
+				}
 			}
 		}
 	}
@@ -142,14 +146,14 @@
 <div
 	aria-label="Artboard"
 	role="region"
-	class="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden bg-background"
+	class="relative flex h-full w-full flex-1 items-center justify-center bg-background"
 	bind:this={artboardContainer}
 	onmousedown={handleMouseDown}
 	onclick={handleArtboardBackgroundClick}
-	style="cursor: {isDragging ? 'grabbing' : 'grab'};"
+	style="cursor: {isDragging ? 'grabbing' : 'grab'}; "
 >
 	<!-- Dotted background pattern -->
-	<div class="grid-dots absolute inset-0"></div>
+	<div id="grid-dots" class="grid-dots absolute inset-0"></div>
 
 	<!-- Zoom controls -->
 	<div class="absolute right-4 top-4 z-10 flex flex-row gap-1">
@@ -197,10 +201,7 @@
 			</div>
 		</div>
 		<!-- FRAME -->
-		<div
-			id="design-canvas"
-			class="flex-0 overflow-hidden rounded-md border-2 border-dashed border-border bg-white"
-		>
+		<div id="design-canvas" class="flex-0 rounded-md border-2 border-dashed border-border bg-white">
 			<HtmlRenderer
 				canvasWidth={artboardStore.artboard_width}
 				canvasHeight={artboardStore.artboard_height}

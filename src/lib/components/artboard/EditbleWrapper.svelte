@@ -41,6 +41,41 @@
 	let toolbarRectStroke = $state('#333333');
 	let toolbarRectStrokeWidth = $state(1);
 
+	// --- Toolbar Position State ---
+	let toolbarPosition = $state<'top' | 'bottom'>('top');
+	let toolbarXPosition = $state<'right' | 'left' | 'center'>('right');
+
+	// Function to calculate and set the optimal toolbar position
+	function calculateToolbarPosition() {
+		if (!BROWSER) return;
+
+		// Get artboard dimensions
+		const artboardWidth = artboardStore.artboard_width;
+		const artboardHeight = artboardStore.artboard_height;
+
+		// Determine if we should place the toolbar on top or bottom
+		// If element is near the top of the artboard, place toolbar at bottom
+		if (currentY < 100) {
+			toolbarPosition = 'bottom';
+		} else {
+			toolbarPosition = 'top';
+		}
+
+		// Determine horizontal position (right, left, center)
+		// If element is near the right edge, place toolbar to the left
+		if (currentX + currentWidth > artboardWidth - 50) {
+			toolbarXPosition = 'left';
+		}
+		// If element is near the left edge, place toolbar to the right
+		else if (currentX < 50) {
+			toolbarXPosition = 'right';
+		}
+		// Default to right alignment
+		else {
+			toolbarXPosition = 'right';
+		}
+	}
+
 	$effect(() => {
 		if (itemData.item.type === 'text') {
 			const textItem = itemData.item as TextItem;
@@ -372,6 +407,9 @@
 	// --- Lifecycle ---
 	onMount(() => {
 		console.log('EditableWrapper mounted for:', itemData.item.type, itemIndex);
+		if (isSelected) {
+			calculateToolbarPosition();
+		}
 	});
 
 	onDestroy(() => {
@@ -491,6 +529,14 @@
 		toolbarFitText = !toolbarFitText;
 		updateStore(); /* $effect will handle visual update */
 	}
+
+	$effect(() => {
+		// Recalculate toolbar position whenever the element position or dimensions change
+		const dependencies = [currentX, currentY, currentWidth, currentHeight, isSelected];
+		if (isSelected) {
+			calculateToolbarPosition();
+		}
+	});
 </script>
 
 {#if itemData}
@@ -622,8 +668,13 @@
 			</div>
 
 			<div
-				class="absolute -top-32 right-0 z-[999] flex max-w-sm transform flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap rounded-lg bg-card/80 px-3 py-2 text-card-foreground shadow-2xl ring-1 backdrop-blur-sm"
-				style={`transform: rotate(${-currentRotation}deg); transform-origin: center center;`}
+				class="absolute z-[999] flex max-w-max transform flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap rounded-lg bg-slate-800/95 px-3 py-2 text-white shadow-2xl ring-1 ring-slate-700 backdrop-blur-sm"
+				style={`
+					${toolbarPosition === 'top' ? 'top: -12px;' : 'bottom: -12px;'}
+					${toolbarXPosition === 'right' ? 'right: 0;' : toolbarXPosition === 'left' ? 'left: 0;' : 'left: 50%; transform: translateX(-50%);'}
+					transform-origin: center center;
+					transform: rotate(${-currentRotation}deg) ${toolbarXPosition === 'center' ? 'translateX(-50%)' : ''};
+				`}
 			>
 				<label class="flex items-center gap-1 text-xs">
 					<Blend class="h-4 w-4" />

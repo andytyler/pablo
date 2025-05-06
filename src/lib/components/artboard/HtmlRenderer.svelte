@@ -78,10 +78,10 @@
 
 {#if designJson && designJson.items && designJson.items.length > 0}
 	<div
-		class="design-canvas-area relative flex overflow-hidden bg-gray-100 dark:bg-gray-900"
+		class="design-canvas-area relative flex bg-gray-100 dark:bg-gray-900"
 		id={canvasContainerId}
 		style="width: {canvasWidth}px; height: {canvasHeight}px; background-color: {designJson.background ||
-			'#ffffff'};"
+			'#ffffff'}; overflow: {artboardStore.selectedItemIndex === null ? 'hidden' : 'visible'};"
 		onclick={handleArtboardBackgroundClick}
 	>
 		{#each designJson.items as item, index ((item.item as { id?: string })?.id || index)}
