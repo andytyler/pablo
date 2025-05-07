@@ -56,13 +56,11 @@ const NewImageItem = z.object({
 	width: z.number().describe('The width of the image'),
 	remove_background: z
 		.boolean()
-		.describe('Whether to remove the background of the image in post porcessing after generation.'),
-	borderRadius: z.number().optional().describe('The border radius of the image')
+		.describe('Whether to remove the background of the image in post porcessing after generation.')
 });
 const ExistingImageItem = z.object({
 	type: z.literal('existing_image').describe('The type of the item'),
-	id: z.string().describe('The ID of an existing image, MUST be exactly as seen before.'),
-	borderRadius: z.number().optional().describe('The border radius of the image')
+	id: z.string().describe('The ID of an existing image, MUST be exactly as seen before.')
 });
 const TextItem = z.object({
 	type: z.literal('text').describe('The type of the item'),
@@ -80,45 +78,13 @@ const TextItem = z.object({
 	wrap: z.boolean().describe('Whether the text should wrap'),
 	bold: z.boolean().describe('Whether the text should be bold'),
 	italic: z.boolean().describe('Whether the text should be italic'),
-	underline: z.boolean().describe('Whether the text should be underlined'),
-	borderRadius: z.number().optional().describe('The border radius of the text box')
+	underline: z.boolean().describe('Whether the text should be underlined')
 });
 const RectItem = z.object({
 	type: z.literal('rectangle').describe('The type of the item'),
-	fill: z
-		.string()
-		.optional()
-		.describe('The fill color of the item, in hex format or "transparent"'),
+	fill: z.string().describe('The fill color of the item, in hex format'),
 	stroke: z.string().describe('The stroke color of the item, in hex format'),
-	strokeWidth: z.number().describe('The stroke width of the item'),
-	borderRadius: z.number().optional().describe('The border radius of the rectangle'),
-	gradient: z
-		.object({
-			type: z.enum(['linear', 'radial', 'mesh']).describe('The type of gradient'),
-			stops: z
-				.array(
-					z.object({
-						color: z.string().describe('Color stop (hex, rgba, etc.)'),
-						offset: z.number().min(0).max(1).describe('Offset of the color stop (0 to 1)')
-					})
-				)
-				.min(2)
-				.describe('At least two color stops for the gradient'),
-			angle: z.number().optional().describe('Angle for linear gradient (degrees)'),
-			shape: z
-				.enum(['ellipse', 'circle'])
-				.optional()
-				.describe('Shape for radial gradient (ellipse or circle)'),
-			position: z
-				.string()
-				.optional()
-				.describe('Position for radial gradient (e.g., "center", "top left")')
-			// Mesh gradients are complex and might need specific properties if fully supported.
-			// For now, type and stops are the basics.
-		})
-		.optional()
-		.describe('Gradient fill for the rectangle'),
-	backdropBlur: z.number().optional().describe('The backdrop blur radius in pixels')
+	strokeWidth: z.number().describe('The stroke width of the item')
 });
 
 // Define a schema for structured responses
@@ -165,7 +131,6 @@ export type EnrichedImageItem = {
 	id: string;
 	url: string;
 	description?: string;
-	borderRadius?: number;
 };
 
 // Define a type for the enriched design

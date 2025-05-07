@@ -26,7 +26,6 @@
 	let currentHeight = $state(itemData.height);
 	let currentRotation = $state(itemData.rotation);
 	let editableOpacity = $state(itemData.opacity);
-	let currentBorderRadius = $state((itemData.item as any).borderRadius || 0);
 
 	// --- Text Editing State ---
 	let textContentForEdit = $state(
@@ -101,26 +100,15 @@
 			toolbarUnderline = textItem.underline;
 			toolbarTextAlign = textItem.align;
 			toolbarFitText = textItem.fitText === undefined ? true : textItem.fitText; // Default true if undefined
-			textItem.borderRadius = currentBorderRadius;
 		} else if (itemData.item.type === 'enriched_image') {
 			const imageItem = itemData.item as EnrichedImageItem;
 			toolbarImageUrl = imageItem.url;
 			toolbarImageDescription = imageItem.description || '';
-			imageItem.borderRadius = currentBorderRadius;
 		} else if (itemData.item.type === 'rectangle') {
 			const rectItem = itemData.item as RectItem;
-			toolbarRectFill = rectItem.fill || 'transparent';
+			toolbarRectFill = rectItem.fill;
 			toolbarRectStroke = rectItem.stroke;
 			toolbarRectStrokeWidth = rectItem.strokeWidth;
-			rectItem.borderRadius = currentBorderRadius;
-			if ('gradient' in itemData.item) {
-				rectItem.gradient = (itemData.item as RectItem).gradient;
-			}
-			if ('backdropBlur' in itemData.item) {
-				rectItem.backdropBlur = (itemData.item as RectItem).backdropBlur;
-			}
-		} else if (itemData.item.type === 'new_image' || itemData.item.type === 'existing_image') {
-			(itemData.item as any).borderRadius = currentBorderRadius;
 		}
 		currentX = itemData.x;
 		currentY = itemData.y;
@@ -128,7 +116,6 @@
 		currentHeight = itemData.height;
 		currentRotation = itemData.rotation;
 		editableOpacity = itemData.opacity;
-		currentBorderRadius = (itemData.item as any).borderRadius || 0;
 	});
 
 	// --- Drag State ---
@@ -191,29 +178,15 @@
 				textItem.underline = toolbarUnderline;
 				textItem.align = toolbarTextAlign;
 				textItem.fitText = toolbarFitText;
-				textItem.borderRadius = currentBorderRadius;
 			} else if (itemToUpdate.item.type === 'enriched_image') {
 				const imageItem = itemToUpdate.item as EnrichedImageItem;
 				imageItem.url = toolbarImageUrl;
 				imageItem.description = toolbarImageDescription;
-				imageItem.borderRadius = currentBorderRadius;
 			} else if (itemToUpdate.item.type === 'rectangle') {
 				const rectItem = itemToUpdate.item as RectItem;
 				rectItem.fill = toolbarRectFill;
 				rectItem.stroke = toolbarRectStroke;
 				rectItem.strokeWidth = toolbarRectStrokeWidth;
-				rectItem.borderRadius = currentBorderRadius;
-				if ('gradient' in itemData.item) {
-					rectItem.gradient = (itemData.item as RectItem).gradient;
-				}
-				if ('backdropBlur' in itemData.item) {
-					rectItem.backdropBlur = (itemData.item as RectItem).backdropBlur;
-				}
-			} else if (
-				itemToUpdate.item.type === 'new_image' ||
-				itemToUpdate.item.type === 'existing_image'
-			) {
-				(itemToUpdate.item as any).borderRadius = currentBorderRadius;
 			}
 
 			updatedItems[itemIndex] = itemToUpdate;
@@ -644,7 +617,6 @@
 								? 'flex-end'
 								: 'flex-start'
 					};
-                    border-radius: ${(itemValue() as TextItem).borderRadius || 0}px;
 				`}
 				></textarea>
 			{:else if itemValue().type === 'enriched_image'}
@@ -652,45 +624,17 @@
 				<img
 					src={imageItem.url}
 					alt={imageItem.description || 'Image'}
-					style={`${actualContentStyle()} object-fit: cover; border-radius: ${(itemValue() as EnrichedImageItem).borderRadius || 0}px;`}
+					style={`${actualContentStyle()} object-fit: cover;`}
 					draggable="false"
 				/>
 			{:else if itemValue().type === 'rectangle'}
 				{@const rectItem = itemValue() as RectItem}
-				{@const gradientCss = () => {
-					if (!rectItem.gradient) {
-						return rectItem.fill && rectItem.fill !== 'transparent'
-							? `background-color: ${rectItem.fill};`
-							: 'background-color: transparent;';
-					}
-					const stops = rectItem.gradient.stops
-						.map((s) => `${s.color} ${s.offset * 100}%`)
-						.join(', ');
-					if (rectItem.gradient.type === 'linear') {
-						return `background-image: linear-gradient(${rectItem.gradient.angle || 180}deg, ${stops});`;
-					}
-					if (rectItem.gradient.type === 'radial') {
-						let position = rectItem.gradient.position || 'center';
-						let shape = rectItem.gradient.shape || 'ellipse';
-						return `background-image: radial-gradient(${shape} at ${position}, ${stops});`;
-					}
-					// Mesh gradients are not directly supported by simple CSS background-image, placeholder
-					if (rectItem.gradient.type === 'mesh') {
-						return `background-color: ${rectItem.fill || 'transparent'}; /* Mesh gradient not rendered */`;
-					}
-					return rectItem.fill && rectItem.fill !== 'transparent'
-						? `background-color: ${rectItem.fill};`
-						: 'background-color: transparent;';
-				}}
-				{@const backdropCss = rectItem.backdropBlur
-					? `backdrop-filter: blur(${rectItem.backdropBlur}px); -webkit-backdrop-filter: blur(${rectItem.backdropBlur}px);`
-					: ''}
 				<div
-					style={`${actualContentStyle()} ${gradientCss()} border: ${rectItem.strokeWidth}px solid ${rectItem.stroke}; border-radius: ${rectItem.borderRadius || 0}px; ${backdropCss}`}
+					style={`${actualContentStyle()} background-color: ${rectItem.fill}; border: ${rectItem.strokeWidth}px solid ${rectItem.stroke};`}
 				></div>
 			{:else if itemValue().type === 'new_image' || itemValue().type === 'existing_image'}
 				<div
-					style={`${actualContentStyle()} background-color: #eee; display:flex; align-items:center; justify-content:center; text-align:center; color: #777; font-size: 0.8em; padding: 5px; border-radius: ${currentBorderRadius}px;`}
+					style={`${actualContentStyle()} background-color: #eee; display:flex; align-items:center; justify-content:center; text-align:center; color: #777; font-size: 0.8em; padding: 5px;`}
 				>
 					{#if itemValue().type === 'new_image'}
 						New Image: {(itemValue() as any).description || 'Generating...'}
