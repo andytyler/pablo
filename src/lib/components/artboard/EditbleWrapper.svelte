@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { artboardStore } from '$lib/stores/artboard-store.svelte';
 	import { BROWSER } from 'esm-env';
+	import { Trash2 } from 'lucide-svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import type {
 		EnrichedImageItem,
@@ -30,7 +31,18 @@
 	let textContentForEdit = $state(
 		itemData.item.type === 'text' ? (itemData.item as TextItem).text : ''
 	);
-	let textElementRef: HTMLDivElement | null = $state(null); // For bind:this
+	let lastItemId = $state((itemData.item && (itemData.item as any).id) || itemIndex);
+	$effect(() => {
+		const currentId = (itemData.item && (itemData.item as any).id) || itemIndex;
+		if (currentId !== lastItemId) {
+			lastItemId = currentId;
+			if (itemData.item.type === 'text') {
+				textContentForEdit = (itemData.item as TextItem).text;
+			}
+		}
+	});
+	let isEditing = $state(false);
+	let pendingTextUpdate = $state(false);
 
 	// --- Image Toolbar State ---
 	let toolbarImageUrl = $state('');
@@ -196,25 +208,36 @@
 		}
 	}
 
-	function handleTextChange(event: Event) {
+	function handleTextInput(event: Event) {
 		if (itemData.item.type === 'text') {
-			textContentForEdit = (event.target as HTMLElement).innerText;
-		}
-	}
-
-	function handleTextBlur() {
-		if (itemData.item.type === 'text') {
-			if (textContentForEdit !== (itemData.item as TextItem).text) {
-				updateStore();
+			const newText = (event.target as HTMLElement).innerText;
+			console.log('Text input:', newText); // Debug
+			if (newText !== textContentForEdit) {
+				textContentForEdit = newText;
+				pendingTextUpdate = true;
 			}
 		}
 	}
 
+	function handleTextFocus() {
+		isEditing = true;
+	}
+
+	function handleTextBlur() {
+		isEditing = false;
+		updateStore();
+	}
+
 	// --- Drag Handlers ---
 	function onDragMouseDown(event: MouseEvent) {
-		// Only allow drag if directly clicking the element and not a handle
+		// Only allow drag if directly clicking the element border only and not a handle
 		if ((event.target as HTMLElement).closest('[data-handle]')) return;
 		if (!isSelected) return;
+
+		const wrapper = (event.target as HTMLElement).closest('#wrapper');
+		const innerElement = (event.target as HTMLElement).closest('#innerElement');
+
+		if (event.target !== wrapper) return;
 
 		event.preventDefault();
 		event.stopPropagation();
@@ -361,46 +384,49 @@
 	}
 
 	// --- Text Fitting Logic ---
-	function fitTextToContainer(element: HTMLDivElement | null) {
-		if (!BROWSER || !element || !toolbarFitText || itemData.item.type !== 'text') {
-			element?.style.removeProperty('font-size'); // remove if fitText was turned off
-			return;
-		}
-		const container = element;
-		// Apply fixed styles first to get proper dimensions for calculation if fitText is off
-		// This part is tricky as fitText ON should override fixed font size.
-		// Let the main style block handle this. Here we just calculate if fitText is ON.
-
-		let minSize = 5; // Min font size in px
-		let maxSize = Math.max(20, currentHeight); // Max font size (e.g., container height)
+	function calculateFittedFontSize(
+		text: string,
+		width: number,
+		height: number,
+		fontFamily: string
+	) {
+		if (!BROWSER) return toolbarFontSize;
+		const measurer = document.createElement('div');
+		measurer.style.position = 'absolute';
+		measurer.style.visibility = 'hidden';
+		measurer.style.left = '-9999px';
+		measurer.style.width = `${width}px`;
+		measurer.style.fontFamily = fontFamily;
+		measurer.style.whiteSpace = (itemData.item as TextItem).wrap ? 'normal' : 'nowrap';
+		measurer.style.fontWeight = toolbarBold ? 'bold' : 'normal';
+		measurer.style.fontStyle = toolbarItalic ? 'italic' : 'normal';
+		measurer.textContent = text;
+		document.body.appendChild(measurer);
+		let minSize = 5;
+		let maxSize = Math.max(20, height);
 		let bestSize = minSize;
-
-		// Temporarily set text and styles for measurement
-		const originalTextContent = element.textContent;
-		element.textContent = textContentForEdit; // Use the latest content
-
-		// Iterative approach to find best font size
-		for (let currentSize = maxSize; currentSize >= minSize; currentSize -= 1) {
-			element.style.fontSize = `${currentSize}px`;
-			if (
-				element.scrollWidth <= container.clientWidth &&
-				element.scrollHeight <= container.clientHeight
-			) {
-				bestSize = currentSize;
+		for (let size = maxSize; size >= minSize; size--) {
+			measurer.style.fontSize = `${size}px`;
+			if (measurer.scrollWidth <= width && measurer.scrollHeight <= height) {
+				bestSize = size;
 				break;
 			}
 		}
-		element.style.fontSize = `${bestSize}px`;
-		// Restore original text content if it was different (though usually not needed if DOM updates after this)
-		// if(element.textContent !== originalTextContent) element.textContent = originalTextContent;
+		document.body.removeChild(measurer);
+		return bestSize;
 	}
 
 	$effect(() => {
-		if (BROWSER && itemData.item.type === 'text' && toolbarFitText && textElementRef) {
-			const dependencies = [textContentForEdit, currentWidth, currentHeight, toolbarFitText];
-			requestAnimationFrame(() => fitTextToContainer(textElementRef));
-		} else if (BROWSER && textElementRef && itemData.item.type === 'text' && !toolbarFitText) {
-			textElementRef.style.removeProperty('font-size');
+		if (BROWSER && itemData.item.type === 'text' && toolbarFitText && !isEditing) {
+			const bestSize = calculateFittedFontSize(
+				textContentForEdit,
+				currentWidth,
+				currentHeight,
+				toolbarFontFamily
+			);
+			if (toolbarFontSize !== bestSize) {
+				toolbarFontSize = bestSize;
+			}
 		}
 	});
 
@@ -425,22 +451,6 @@
 			window.removeEventListener('mousemove', onRotationMouseMove);
 			window.removeEventListener('mouseup', onRotationMouseUp);
 		}
-	});
-
-	// --- Styles for the wrapper and content ---
-	const wrapperStyle = $derived(() => {
-		return `
-			position: absolute;
-			left: ${currentX}px;
-			top: ${currentY}px;
-			width: ${currentWidth}px;
-			height: ${currentHeight}px;
-			transform: rotate(${currentRotation}deg);
-			border: ${isSelected ? '2px dashed blue' : '1px solid transparent'};
-			cursor: ${isDragging ? 'grabbing' : isSelected && !activeHandle ? 'grab' : activeHandle ? getCursorForHandle(activeHandle) : 'pointer'};
-			user-select: none;
-			box-shadow: ${isSelected ? '0 0 5px rgba(0,0,255,0.5)' : 'none'};
-		`;
 	});
 
 	const contentStyleBase = `width: 100%; height: 100%; display: block; box-sizing: border-box; pointer-events: none;`;
@@ -537,121 +547,157 @@
 			calculateToolbarPosition();
 		}
 	});
+	// --- Styles for the wrapper and content ---
+	const wrapperStyle = $derived(() => {
+		return `
+			position: absolute;
+			left: ${currentX}px;
+			top: ${currentY}px;
+			width: ${currentWidth}px;
+			height: ${currentHeight}px;
+			transform: rotate(${currentRotation}deg);
+			cursor: ${isDragging ? 'grabbing' : isSelected && !activeHandle ? 'grab' : activeHandle ? getCursorForHandle(activeHandle) : 'pointer'};
+			user-select: none;
+		`;
+	});
+	const containerStyle = $derived(() => {
+		return `
+            z-index: ${itemData.zIndex - 1}; 
+            border: ${isSelected ? '3px solid #aae' : '2px solid transparent'};
+		    box-shadow: ${isSelected ? '0 0 5px rgba(0,0,255,0.5)' : 'none'};
+            position: absolute; 
+            top: 0; 
+            left: 0; right: 0; 
+            bottom: 0; 
+            pointer-events: auto; 
+            padding: 0px;
+            cursor: move 
+        `;
+	});
 </script>
 
 {#if itemData}
-	<div
-		data-item-index={itemIndex}
-		class="editable-wrapper-class"
-		style={wrapperStyle()}
-		onclick={handleClick}
-		onmousedown={onDragMouseDown}
-	>
-		{#if itemValue().type === 'text'}
-			{@const textItem = itemValue() as TextItem}
-			<div
-				bind:this={textElementRef}
-				contenteditable={isSelected}
-				style={`
+	<div data-item-index={itemIndex} style={wrapperStyle()} onclick={handleClick}>
+		<div
+			id="wrapper"
+			style={containerStyle()}
+			onfocus={handleTextFocus}
+			onblur={handleTextBlur}
+			onmousedown={onDragMouseDown}
+		>
+			{#if itemValue().type === 'text'}
+				{@const textItem = itemValue() as TextItem}
+				<textarea
+					id="innerElement"
+					onblur={handleTextBlur}
+					contenteditable
+					bind:value={textContentForEdit}
+					style={`
 					${actualContentStyle()}
-					pointer-events: ${isSelected && !isDragging && !isResizing ? 'auto' : 'none'};
+                    cursor: default;
+                    resize: none;
+                    user-select: text;
+                    background-color: transparent;
+					pointer-events: ${isSelected ? 'auto' : 'none'};
 					font-family: ${toolbarFontFamily};
 					color: ${toolbarFontColor};
-					${!toolbarFitText ? `font-size: ${toolbarFontSize}px;` : ''}
+					font-size: ${toolbarFontSize}px;
 					font-weight: ${toolbarBold ? 'bold' : 'normal'};
 					font-style: ${toolbarItalic ? 'italic' : 'normal'};
 					text-decoration: ${toolbarUnderline ? 'underline' : 'none'};
 					text-align: ${toolbarTextAlign};
 					white-space: ${textItem.wrap ? 'normal' : 'nowrap'};
-					overflow: hidden; 
+					overflow: visible; 
 					display: flex;
 					align-items: center;
-					justify-content: ${toolbarTextAlign === 'center' ? 'center' : toolbarTextAlign === 'right' ? 'flex-end' : 'flex-start'};
+					justify-content: ${
+						toolbarTextAlign === 'center'
+							? 'center'
+							: toolbarTextAlign === 'right'
+								? 'flex-end'
+								: 'flex-start'
+					};
 				`}
-				oninput={handleTextChange}
-				onblur={handleTextBlur}
-			>
-				{textContentForEdit}
-			</div>
-		{:else if itemValue().type === 'enriched_image'}
-			{@const imageItem = itemValue() as EnrichedImageItem}
-			<img
-				src={imageItem.url}
-				alt={imageItem.description || 'Image'}
-				style={`${actualContentStyle()} object-fit: cover;`}
-				draggable="false"
-			/>
-		{:else if itemValue().type === 'rectangle'}
-			{@const rectItem = itemValue() as RectItem}
-			<div
-				style={`${actualContentStyle()} background-color: ${rectItem.fill}; border: ${rectItem.strokeWidth}px solid ${rectItem.stroke};`}
-			></div>
-		{:else if itemValue().type === 'new_image' || itemValue().type === 'existing_image'}
-			<div
-				style={`${actualContentStyle()} background-color: #eee; display:flex; align-items:center; justify-content:center; text-align:center; color: #777; font-size: 0.8em; padding: 5px;`}
-			>
-				{#if itemValue().type === 'new_image'}
-					New Image: {(itemValue() as any).description || 'Generating...'}
-				{:else}
-					Existing Image ID: {(itemValue() as any).id || 'Loading...'}
-				{/if}
-			</div>
-		{/if}
+				></textarea>
+			{:else if itemValue().type === 'enriched_image'}
+				{@const imageItem = itemValue() as EnrichedImageItem}
+				<img
+					src={imageItem.url}
+					alt={imageItem.description || 'Image'}
+					style={`${actualContentStyle()} object-fit: cover;`}
+					draggable="false"
+				/>
+			{:else if itemValue().type === 'rectangle'}
+				{@const rectItem = itemValue() as RectItem}
+				<div
+					style={`${actualContentStyle()} background-color: ${rectItem.fill}; border: ${rectItem.strokeWidth}px solid ${rectItem.stroke};`}
+				></div>
+			{:else if itemValue().type === 'new_image' || itemValue().type === 'existing_image'}
+				<div
+					style={`${actualContentStyle()} background-color: #eee; display:flex; align-items:center; justify-content:center; text-align:center; color: #777; font-size: 0.8em; padding: 5px;`}
+				>
+					{#if itemValue().type === 'new_image'}
+						New Image: {(itemValue() as any).description || 'Generating...'}
+					{:else}
+						Existing Image ID: {(itemValue() as any).id || 'Loading...'}
+					{/if}
+				</div>
+			{/if}
 
-		{#if isSelected}
-			{@const commonStaticStyle = `position: absolute; background: blue; border: 1px solid white; z-index: 11;`}
-			{@const handleWidth = `${resizeHandleSize}px`}
-			{@const handleHeight = `${resizeHandleSize}px`}
-			{@const negOffset = `-${resizeHandleOffset}px`}
-			{@const centerOffset = `calc(50% - ${resizeHandleOffset}px)`}
+			{#if isSelected}
+				{@const commonStaticStyle = `position: absolute; background: blue; border: 1px solid white; z-index: 11;`}
+				{@const handleWidth = `${resizeHandleSize}px`}
+				{@const handleHeight = `${resizeHandleSize}px`}
+				{@const negOffset = `-${resizeHandleOffset}px`}
+				{@const centerOffset = `calc(50% - ${resizeHandleOffset}px)`}
 
-			<div
-				data-handle="nw"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {negOffset}; left: {negOffset}; cursor: nwse-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'nw')}
-			></div>
-			<div
-				data-handle="ne"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {negOffset}; right: {negOffset}; cursor: nesw-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'ne')}
-			></div>
-			<div
-				data-handle="sw"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; bottom: {negOffset}; left: {negOffset}; cursor: nesw-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'sw')}
-			></div>
-			<div
-				data-handle="se"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; bottom: {negOffset}; right: {negOffset}; cursor: nwse-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'se')}
-			></div>
+				<div
+					data-handle="nw"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {negOffset}; left: {negOffset}; cursor: nwse-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'nw')}
+				></div>
+				<div
+					data-handle="ne"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {negOffset}; right: {negOffset}; cursor: nesw-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'ne')}
+				></div>
+				<div
+					data-handle="sw"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; bottom: {negOffset}; left: {negOffset}; cursor: nesw-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'sw')}
+				></div>
+				<div
+					data-handle="se"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; bottom: {negOffset}; right: {negOffset}; cursor: nwse-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'se')}
+				></div>
 
-			<div
-				data-handle="n"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {negOffset}; left: {centerOffset}; cursor: ns-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'n')}
-			></div>
-			<div
-				data-handle="s"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; bottom: {negOffset}; left: {centerOffset}; cursor: ns-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 's')}
-			></div>
-			<div
-				data-handle="w"
-				style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {centerOffset}; left: {negOffset}; cursor: ew-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'w')}
-			></div>
+				<div
+					data-handle="n"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {negOffset}; left: {centerOffset}; cursor: ns-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'n')}
+				></div>
+				<div
+					data-handle="s"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; bottom: {negOffset}; left: {centerOffset}; cursor: ns-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 's')}
+				></div>
+				<div
+					data-handle="w"
+					style="{commonStaticStyle} width: {handleWidth}; height: {handleHeight}; top: {centerOffset}; left: {negOffset}; cursor: ew-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'w')}
+				></div>
 
-			<div
-				data-handle="e"
-				style="position: absolute; background: blue; border: 1px solid white; z-index: 11; width: {resizeHandleSize}px; height: {resizeHandleSize}px; top: calc(50% - {resizeHandleOffset}px); right: -{resizeHandleOffset}px; cursor: ew-resize;"
-				onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'e')}
-			></div>
+				<div
+					data-handle="e"
+					style="position: absolute; background: blue; border: 1px solid white; z-index: 11; width: {resizeHandleSize}px; height: {resizeHandleSize}px; top: calc(50% - {resizeHandleOffset}px); right: -{resizeHandleOffset}px; cursor: ew-resize;"
+					onmousedown={(e: MouseEvent) => onResizeMouseDown(e, 'e')}
+				></div>
 
-			{@const rotationHandleOffset = 20}
-			<div
-				class="rotation-handle"
-				style="position: absolute;
+				{@const rotationHandleOffset = 20}
+				<div
+					class="rotation-handle"
+					style="position: absolute;
 						left: calc(50% - 7px);
 						top: -{rotationHandleOffset + 7}px;
 						width: 14px; height: 14px;
@@ -660,151 +706,152 @@
 						border: 1px solid white;
 						cursor: alias;
 						z-index: 12;"
-				onmousedown={onRotationMouseDown}
-			>
-				<div
-					style="position: absolute; left: 50%; top: 100%; width: 1px; height: {rotationHandleOffset}px; background: blue; transform: translateX(-50%);"
-				></div>
-			</div>
+					onmousedown={onRotationMouseDown}
+				>
+					<div
+						style="position: absolute; left: 50%; top: 100%; width: 1px; height: {rotationHandleOffset}px; background: blue; transform: translateX(-50%);"
+					></div>
+				</div>
 
-			<div
-				class="absolute z-[999] flex max-w-max transform flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap rounded-lg bg-slate-800/95 px-3 py-2 text-white shadow-2xl ring-1 ring-slate-700 backdrop-blur-sm"
-				style={`
-					${toolbarPosition === 'top' ? 'top: -12px;' : 'bottom: -12px;'}
+				<div
+					class="absolute z-[999] flex max-w-max transform flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap rounded-lg bg-slate-800/95 px-3 py-2 text-white shadow-2xl ring-1 ring-slate-700 backdrop-blur-sm"
+					style={`
+					${toolbarPosition === 'top' ? 'top: -48px;' : 'bottom: -48px;'}
 					${toolbarXPosition === 'right' ? 'right: 0;' : toolbarXPosition === 'left' ? 'left: 0;' : 'left: 50%; transform: translateX(-50%);'}
 					transform-origin: center center;
 					transform: rotate(${-currentRotation}deg) ${toolbarXPosition === 'center' ? 'translateX(-50%)' : ''};
 				`}
-			>
-				<label class="flex items-center gap-1 text-xs">
-					<Blend class="h-4 w-4" />
-					<input
-						type="number"
-						min="0"
-						max="100"
-						bind:value={editableOpacity}
-						onblur={handleOpacityInputBlur}
-						class="h-4 w-full cursor-pointer rounded-lg bg-gray-700 accent-blue-500"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}
-					/>
-					<span class="w-7 text-right text-gray-300">{editableOpacity}%</span>
-				</label>
-
-				{#if itemValue().type === 'text'}
-					<div class="h-5 border-l border-border"></div>
-					<label class="flex items-center gap-1 text-xs"
-						>Font: <input
-							type="text"
-							bind:value={toolbarFontFamily}
-							oninput={handleToolbarInputChange}
-							class="w-20 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-							onmousedown={(e: MouseEvent) => e.stopPropagation()}
-						/></label
-					>
-					<label class="flex items-center gap-1 text-xs"
-						>Size: <input
-							type="number"
-							bind:value={toolbarFontSize}
-							oninput={handleToolbarInputChange}
-							class="w-12 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-							disabled={toolbarFitText}
-							onmousedown={(e: MouseEvent) => e.stopPropagation()}
-						/></label
-					>
-					<label class="flex items-center gap-0.5 text-xs"
-						>Color: <input
-							type="color"
-							bind:value={toolbarFontColor}
-							oninput={handleToolbarInputChange}
-							class="h-5 w-6 cursor-pointer rounded border border-gray-600 bg-transparent"
-							onmousedown={(e: MouseEvent) => e.stopPropagation()}
-						/></label
-					>
-
-					<div class="h-5 border-l border-gray-600"></div>
-					<button
-						title="Bold"
-						onclick={toggleBold}
-						class:active-tool={toolbarBold}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarBold
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>B</button
-					>
-					<button
-						title="Italic"
-						onclick={toggleItalic}
-						class:active-tool={toolbarItalic}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarItalic
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>I</button
-					>
-					<button
-						title="Underline"
-						onclick={toggleUnderline}
-						class:active-tool={toolbarUnderline}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarUnderline
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>U</button
-					>
-
-					<div class="h-5 border-l border-gray-600"></div>
-					<button
-						title="Align Left"
-						onclick={() => setTextAlign('left')}
-						class:active={toolbarTextAlign === 'left'}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
-						'left'
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>L</button
-					>
-					<button
-						title="Align Center"
-						onclick={() => setTextAlign('center')}
-						class:active={toolbarTextAlign === 'center'}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
-						'center'
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>C</button
-					>
-					<button
-						title="Align Right"
-						onclick={() => setTextAlign('right')}
-						class:active={toolbarTextAlign === 'right'}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
-						'right'
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>R</button
-					>
-
-					<div class="h-5 border-l border-gray-600"></div>
-					<button
-						title="Fit Text to Box"
-						onclick={toggleFitText}
-						class:active={toolbarFitText}
-						class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarFitText
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-600 text-gray-300'}"
-						onmousedown={(e: MouseEvent) => e.stopPropagation()}>Fit</button
-					>
-				{/if}
-
-				<div class="h-5 border-l border-gray-600"></div>
-				<button
-					title="Delete Item"
-					onclick={deleteItem}
-					onmousedown={(e: MouseEvent) => e.stopPropagation()}
-					class="px-1 py-0.5 text-lg text-gray-300 hover:text-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
 				>
-					🗑️
-				</button>
-			</div>
-		{/if}
+					<label class="flex items-center gap-1 text-xs">
+						<Blend class="h-4 w-4" />
+						<input
+							type="number"
+							min="0"
+							max="100"
+							bind:value={editableOpacity}
+							onblur={handleOpacityInputBlur}
+							class="h-4 w-full cursor-pointer rounded-lg bg-gray-700 accent-blue-500"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}
+						/>
+						<span class="w-7 text-right text-gray-300">{editableOpacity}%</span>
+					</label>
+
+					{#if itemValue().type === 'text'}
+						<div class="h-5 border-l border-border"></div>
+						<label class="flex items-center gap-1 text-xs"
+							>Font: <input
+								type="text"
+								bind:value={toolbarFontFamily}
+								oninput={handleToolbarInputChange}
+								class="w-20 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+								onmousedown={(e: MouseEvent) => e.stopPropagation()}
+							/></label
+						>
+						<label class="flex items-center gap-1 text-xs"
+							>Size: <input
+								type="number"
+								bind:value={toolbarFontSize}
+								oninput={handleToolbarInputChange}
+								class="w-12 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+								disabled={toolbarFitText}
+								onmousedown={(e: MouseEvent) => e.stopPropagation()}
+							/></label
+						>
+						<label class="flex items-center gap-0.5 text-xs"
+							>Color: <input
+								type="color"
+								bind:value={toolbarFontColor}
+								oninput={handleToolbarInputChange}
+								class="h-5 w-6 cursor-pointer rounded border border-gray-600 bg-transparent"
+								onmousedown={(e: MouseEvent) => e.stopPropagation()}
+							/></label
+						>
+
+						<div class="h-5 border-l border-gray-600"></div>
+						<button
+							title="Bold"
+							onclick={toggleBold}
+							class:active-tool={toolbarBold}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarBold
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>B</button
+						>
+						<button
+							title="Italic"
+							onclick={toggleItalic}
+							class:active-tool={toolbarItalic}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarItalic
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>I</button
+						>
+						<button
+							title="Underline"
+							onclick={toggleUnderline}
+							class:active-tool={toolbarUnderline}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarUnderline
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>U</button
+						>
+
+						<div class="h-5 border-l border-gray-600"></div>
+						<button
+							title="Align Left"
+							onclick={() => setTextAlign('left')}
+							class:active={toolbarTextAlign === 'left'}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
+							'left'
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>L</button
+						>
+						<button
+							title="Align Center"
+							onclick={() => setTextAlign('center')}
+							class:active={toolbarTextAlign === 'center'}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
+							'center'
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>C</button
+						>
+						<button
+							title="Align Right"
+							onclick={() => setTextAlign('right')}
+							class:active={toolbarTextAlign === 'right'}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarTextAlign ===
+							'right'
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>R</button
+						>
+
+						<div class="h-5 border-l border-gray-600"></div>
+						<button
+							title="Fit Text to Box"
+							onclick={toggleFitText}
+							class:active={toolbarFitText}
+							class="rounded px-1.5 py-0.5 text-xs hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 {toolbarFitText
+								? 'bg-blue-600 text-white'
+								: 'bg-gray-600 text-gray-300'}"
+							onmousedown={(e: MouseEvent) => e.stopPropagation()}>Fit</button
+						>
+					{/if}
+
+					<div class="h-5 border-l border-gray-600"></div>
+					<button
+						title="Delete Item"
+						onclick={deleteItem}
+						onmousedown={(e: MouseEvent) => e.stopPropagation()}
+						class="px-1 py-0.5 text-lg text-gray-300 hover:text-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+					>
+						<Trash2 class="h-4 w-4" />
+					</button>
+				</div>
+			{/if}
+		</div>
 	</div>
 {/if}
 

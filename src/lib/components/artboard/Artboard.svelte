@@ -10,6 +10,7 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import ZoomIn from '@lucide/svelte/icons/zoom-in';
 	import ZoomOut from '@lucide/svelte/icons/zoom-out';
+	import { Trash } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import HtmlRenderer from './HtmlRenderer.svelte';
 
@@ -36,6 +37,12 @@
 				}
 			}
 		}
+	}
+
+	function clearArtboard() {
+		artboardStore.image_enriched_design_json = null;
+		artboardStore.artboard_width = 600;
+		artboardStore.artboard_height = 600;
 	}
 
 	// --- Google Fonts Loading ---
@@ -68,6 +75,10 @@
 		return `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
 	});
 	// --- End Google Fonts Loading ---
+
+	// Grid properties
+	let gridSize = $derived(20 * zoom); // Scale grid size directly with zoom level
+	let dotSize = $derived(1 * zoom); // Scale dot size directly with zoom level
 
 	// Reset zoom and pan
 	function resetView() {
@@ -115,6 +126,21 @@
 	function handleMouseUp() {
 		isDragging = false;
 	}
+
+	// Update grid dots according to zoom
+	$effect(() => {
+		if (browser) {
+			const gridDots = document.getElementById('grid-dots');
+			if (gridDots) {
+				gridDots.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+				gridDots.style.backgroundImage = `radial-gradient(circle, #444 ${dotSize}px, transparent ${dotSize}px)`;
+				// Move background position with pan to create the infinite canvas effect
+				const offsetX = (panX % gridSize) / zoom;
+				const offsetY = (panY % gridSize) / zoom;
+				gridDots.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+			}
+		}
+	});
 
 	onMount(() => {
 		// Add event listeners for wheel and mouse events
@@ -207,10 +233,14 @@
 				canvasHeight={artboardStore.artboard_height}
 			/>
 		</div>
-		<div class="flex flex-row items-start gap-2">
+
+		<div class="flex flex-row justify-between gap-2">
 			<p>
 				{artboardStore.image_enriched_design_json?.concept}
 			</p>
+			<Button variant="outline" size="icon" onclick={clearArtboard} title="Clear Artboard">
+				<Trash class="h-4 w-4" />
+			</Button>
 		</div>
 	</div>
 </div>
@@ -218,10 +248,8 @@
 <style>
 	/* Dotted background pattern */
 	.grid-dots {
-		background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
-		background-size: 20px 20px;
-		background-position: 0 0;
 		opacity: 0.5;
+		/* Background styling is now handled dynamically in the $effect */
 	}
 
 	/* Ensure the content maintains crisp text during zoom */

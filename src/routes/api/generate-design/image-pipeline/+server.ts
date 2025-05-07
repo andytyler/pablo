@@ -1,5 +1,4 @@
-import { generateImageFromItem } from '$lib/connections/prodia';
-import { removeBackground } from '$lib/connections/replicate';
+import { generateImageFromItem, removeBackground } from '$lib/connections/prodia';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 

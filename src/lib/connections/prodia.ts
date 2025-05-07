@@ -19,7 +19,7 @@ export async function generateImageFromItem(
 		const prompt = `A ${width}x${height} image. ${description}. With ${colors} colors, ${objects} objects, ${mood} mood, ${composition} composition, ${style} style`;
 		// Create a job with the SDK using v2 API
 		const job = await prodia.job({
-			type: 'inference.flux.schnell.txt2img.v1', // Default model
+			type: 'inference.flux.pro11.txt2img.v1',
 			config: {
 				prompt,
 				negative_prompt: 'low quality, blurry',
@@ -52,6 +52,58 @@ export async function generateImageFromItem(
 		return { url, error };
 	} catch (error) {
 		console.error('✨ [prodia] Error generating or uploading image:', error);
+		return {
+			url: null,
+			error: error instanceof Error ? error : new Error(String(error))
+		};
+	}
+}
+export async function removeBackground(
+	image: string
+): Promise<{ url: string | null; error: Error | null }> {
+	const apiKey = import.meta.env.VITE_PRODIA_API_KEY;
+	const prodia = createProdia({
+		token: apiKey
+	});
+
+	try {
+		// create array buffer from url
+		const inputImageBuffer = await fetch(image).then((res) => res.arrayBuffer());
+
+		// Create a job with the SDK using v2 API
+		const job = await prodia.job(
+			{
+				type: 'inference.remove-background.v1',
+				config: {}
+			},
+			{ inputs: [inputImageBuffer] }
+		);
+
+		// Get the image directly as an array buffer
+		const imageBuffer = await job.arrayBuffer();
+
+		// Convert to a Blob
+		const imageBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
+
+		// Create a File object with a unique name using timestamp
+		const timestamp = new Date().getTime();
+		const filename = `prodia_bg_removed_${timestamp}.jpg`;
+		const imageFile = new File([imageBlob], filename, { type: 'image/jpeg' });
+
+		// Upload to Supabase
+		const { data, error: uploadError } = await uploadImage(imageFile, 'prodia');
+
+		if (uploadError) {
+			console.error('✨ [prodia] Error uploading removed background image:', uploadError);
+			return { url: null, error: uploadError };
+		}
+
+		// Get the public URL
+		const { url, error } = await getImageUrl(filename, 'prodia');
+
+		return { url, error };
+	} catch (error) {
+		console.error('✨ [prodia] Error removing background:', error);
 		return {
 			url: null,
 			error: error instanceof Error ? error : new Error(String(error))
