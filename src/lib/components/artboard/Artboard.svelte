@@ -248,7 +248,7 @@
 <style>
 	/* Dotted background pattern */
 	.grid-dots {
-		opacity: 0.5;
+		opacity: 0.8;
 		/* Background styling is now handled dynamically in the $effect */
 	}
 

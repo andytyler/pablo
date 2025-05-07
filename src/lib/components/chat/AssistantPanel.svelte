@@ -19,8 +19,12 @@
 			<Tabs.Trigger class="" value="setup">Artboard Info</Tabs.Trigger>
 			<Tabs.Trigger class="" value="assistant">AI Assistant</Tabs.Trigger>
 			<Tabs.Trigger class="" value="images">Images</Tabs.Trigger>
+			<Tabs.Trigger class="" value="assets">Assets</Tabs.Trigger>
 		</Tabs.List>
 
+		<Tabs.Content value="setup" class="h-full">
+			<ArtboardAssets />
+		</Tabs.Content>
 		<Tabs.Content value="setup" class="h-full">
 			<div class="flex-1 overflow-hidden">
 				<h2 class="mb-2 text-sm font-medium">Artboard Information</h2>
