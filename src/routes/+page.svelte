@@ -40,7 +40,7 @@
 		<div class="relative mb-8 h-[90vh] overflow-hidden rounded-3xl">
 			<!-- Background image at the top -->
 			<div
-				class="absolute inset-0 h-full w-full bg-gradient-to-br from-white/60 via-white/40 to-white/60 backdrop-blur-sm"
+				class="absolute inset-0 h-full w-full bg-gradient-to-br from-background/60 via-background/40 to-background/60 backdrop-blur-sm"
 			></div>
 
 			<!-- Navbar overlay -->
@@ -118,7 +118,7 @@
 					<span class="text-xl font-bold">Dreamsurf</span>
 				</div>
 				<p class="mt-4 max-w-md text-muted-foreground">
-					Dreamsurf is the AI-powered designer, that lets you edit your AI-generated designs.
+					AI designer, that lets you edit your AI-generated designs.
 				</p>
 				<div class="mt-6 flex space-x-4">
 					<a href={site_config.socials.twitter} target="_blank" rel="noopener noreferrer">
