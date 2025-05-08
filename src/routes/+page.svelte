@@ -41,6 +41,7 @@
 				<div class="container mx-auto flex items-center justify-between py-6">
 					<div class="flex items-center gap-2">
 						<img src="/logo.png" alt="Dreamsurf Logo" class="h-10" />
+						<span class="text-xl font-bold">Dreamsurf</span>
 					</div>
 
 					<div class="flex items-center gap-2">
@@ -57,8 +58,12 @@
 			<!-- Floating text centered on the image -->
 			<div class="absolute inset-0 z-10 flex flex-col items-center justify-center">
 				<div class="text-center">
-					<h1 class="mb-6 text-5xl font-bold text-white drop-shadow-lg md:text-7xl">
-						Text to Design
+					<h1
+						class="mb-6 flex items-center justify-center gap-4 text-6xl font-bold drop-shadow-xl md:text-8xl"
+					>
+						<span class="animate-word-1 text-gradient">Text</span>
+						<span class="animate-word-2 text-gradient">to</span>
+						<span class="animate-word-3 text-gradient">Design</span>
 					</h1>
 					<Button
 						variant="secondary"
@@ -251,6 +256,105 @@
 	/* Ocean gradient */
 	.ocean-gradient {
 		background: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+	}
+
+	/* Text animations */
+	.animate-word-1 {
+		display: inline-block;
+		transform-origin: center;
+		position: relative;
+		animation-name: float-1;
+		animation-duration: 5s;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+		animation-delay: 0s;
+	}
+
+	.animate-word-2 {
+		display: inline-block;
+		transform-origin: center;
+		position: relative;
+		animation-name: float-2;
+		animation-duration: 4s;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+		animation-delay: 1.5s;
+		font-size: 0.8em;
+		opacity: 0.9;
+		margin: 0 -5px;
+	}
+
+	.animate-word-3 {
+		display: inline-block;
+		transform-origin: center;
+		position: relative;
+		animation-name: float-3;
+		animation-duration: 6s;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+		animation-delay: 0.75s;
+	}
+
+	/* Text gradient effect */
+	.text-gradient {
+		background: linear-gradient(135deg, #ff58e7 0%, #ab7bff 50%, #e74aff 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		filter: drop-shadow(0 2px 8px rgba(171, 123, 255, 0.5));
+	}
+
+	@keyframes float-1 {
+		0%,
+		100% {
+			transform: translateY(0) rotate(0deg);
+			filter: drop-shadow(0 5px 15px rgba(231, 74, 255, 0.4));
+		}
+		25% {
+			transform: translateY(-25px) rotate(8deg);
+			filter: drop-shadow(0 25px 15px rgba(231, 74, 255, 0.2));
+		}
+		75% {
+			transform: translateY(10px) rotate(-5deg);
+			filter: drop-shadow(0 5px 10px rgba(231, 74, 255, 0.6));
+		}
+	}
+
+	@keyframes float-2 {
+		0%,
+		100% {
+			transform: translateY(0) rotate(0deg) scale(1);
+			filter: drop-shadow(0 5px 15px rgba(171, 123, 255, 0.4));
+		}
+		50% {
+			transform: translateY(-15px) rotate(-10deg) scale(1.2);
+			filter: drop-shadow(0 15px 10px rgba(171, 123, 255, 0.2));
+		}
+	}
+
+	@keyframes float-3 {
+		0%,
+		100% {
+			transform: translateY(0) rotate(0deg);
+			filter: drop-shadow(0 5px 15px rgba(255, 88, 231, 0.4));
+		}
+		33% {
+			transform: translateY(-20px) rotate(-12deg);
+			filter: drop-shadow(0 20px 15px rgba(255, 88, 231, 0.2));
+		}
+		66% {
+			transform: translateY(12px) rotate(8deg);
+			filter: drop-shadow(0 5px 10px rgba(255, 88, 231, 0.6));
+		}
+	}
+
+	/* Add additional glow effect on hover */
+	.animate-word-1:hover,
+	.animate-word-2:hover,
+	.animate-word-3:hover {
+		filter: drop-shadow(0 0 15px rgba(255, 121, 243, 0.8))
+			drop-shadow(0 0 30px rgba(171, 123, 255, 0.6));
+		transition: filter 0.3s ease;
 	}
 
 	/* Wave animations */
