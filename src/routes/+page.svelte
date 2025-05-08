@@ -118,8 +118,7 @@
 					<span class="text-xl font-bold">Dreamsurf</span>
 				</div>
 				<p class="mt-4 max-w-md text-muted-foreground">
-					Dreamsurf is the AI-powered platform that turns dream descriptions into beautiful designs
-					in seconds. Ride the wave of creativity.
+					Dreamsurf is the AI-powered designer, that lets you edit your AI-generated designs.
 				</p>
 				<div class="mt-6 flex space-x-4">
 					<a href={site_config.socials.twitter} target="_blank" rel="noopener noreferrer">
@@ -174,39 +173,12 @@
 							>Join Us</a
 						>
 					</li>
-					<li>
-						<a href="/" class="text-muted-foreground transition-colors hover:text-primary"
-							>Wave Journal</a
-						>
-					</li>
-					<li>
-						<a
-							href={`mailto:${site_config.contact.email}`}
-							class="text-muted-foreground transition-colors hover:text-primary">Connect</a
-						>
-					</li>
 				</ul>
 			</div>
 
 			<div>
 				<h3 class="mb-4 text-lg font-semibold">Surf Guide</h3>
 				<ul class="space-y-2">
-					<li>
-						<a href="/" class="text-muted-foreground transition-colors hover:text-primary"
-							>Wave Manual</a
-						>
-					</li>
-					<li>
-						<a
-							href={`mailto:${site_config.contact.support}`}
-							class="text-muted-foreground transition-colors hover:text-primary">Wave Support</a
-						>
-					</li>
-					<li>
-						<a href="/" class="text-muted-foreground transition-colors hover:text-primary"
-							>Surf Lessons</a
-						>
-					</li>
 					<li>
 						<a href="/" class="text-muted-foreground transition-colors hover:text-primary"
 							>Surf Community</a
@@ -221,7 +193,7 @@
 		<div class="flex flex-col items-center justify-between gap-4 md:flex-row">
 			<p class="text-sm text-muted-foreground">
 				© {new Date().getFullYear()}
-				Dreamsurf. All waves reserved.
+				Dreamsurf. All rights reserved.
 			</p>
 			<div class="flex gap-6">
 				<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-primary"

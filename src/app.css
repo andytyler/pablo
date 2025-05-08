@@ -151,24 +151,7 @@
       transform: translateY(-15px) rotate(1deg);
     }
   }
-  
-  @keyframes glow {
-    0% {
-      text-shadow: 0 0 10px rgba(0, 153, 218, 0.5);
-    }
-    100% {
-      text-shadow: 0 0 30px rgba(0, 153, 218, 0.8), 0 0 60px rgba(0, 153, 218, 0.4);
-    }
-  }
-  
-  @keyframes glow-intense {
-    0% {
-      text-shadow: 0 5px 15px rgba(0, 183, 195, 0.6);
-    }
-    100% {
-      text-shadow: 0 5px 30px rgba(0, 183, 195, 0.9), 0 10px 60px rgba(0, 183, 195, 0.5);
-    }
-  }
+
   
   @keyframes pulse-glow {
     0%, 100% {
