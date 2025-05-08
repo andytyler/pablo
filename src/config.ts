@@ -1,19 +1,19 @@
 export const site_config = {
-	site_name: 'Pablo AI',
-	site_description: 'text to design.',
+	site_name: 'Dreamsurf',
+	site_description: 'Text to design.',
 	tag_line: 'Text to imagination',
-	domain: 'https://pabloai.com',
-	image: 'https://pabloai.com/og-image.png',
+	domain: 'https://dreamsurf.ai',
+	image: 'https://dreamsurf.ai/og-image.png',
 	keywords: ['pablo', 'ai', 'design', 'text-to-image', 'generative ai', 'graphic design'],
 	socials: {
-		twitter: 'https://twitter.com/pabloai',
-		github: 'https://github.com/pabloai',
-		linkedin: 'https://linkedin.com/in/pabloai',
-		instagram: 'https://instagram.com/pabloai'
+		twitter: 'https://twitter.com/dreamsurfai',
+		github: 'https://github.com/dreamsurfai',
+		linkedin: 'https://linkedin.com/in/dreamsurfai',
+		instagram: 'https://instagram.com/dreamsurfai'
 	},
 	contact: {
-		email: 'hello@pabloai.com',
-		support: 'support@pabloai.com'
+		email: 'hello@dreamsurf.ai',
+		support: 'support@dreamsurf.ai'
 	},
 	features: [
 		{

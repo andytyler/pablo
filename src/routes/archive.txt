@@ -1,0 +1,1628 @@
+<script lang="ts">
+	// Dream bubble generator
+	function createDreamBubble(event: MouseEvent | TouchEvent) {
+		const container = document.querySelector('.dream-bubble-container');
+		if (!container) return;
+
+		const bubble = document.createElement('div');
+		bubble.classList.add('dream-bubble');
+
+		// Random size between 30px and 80px
+		const size = 30 + Math.random() * 50;
+		bubble.style.width = `${size}px`;
+		bubble.style.height = `${size}px`;
+
+		// Set position to click coordinates
+		const clientX =
+			'touches' in event && event.touches[0]
+				? event.touches[0].clientX
+				: 'clientX' in event
+					? event.clientX
+					: 0;
+		const clientY =
+			'touches' in event && event.touches[0]
+				? event.touches[0].clientY
+				: 'clientY' in event
+					? event.clientY
+					: 0;
+
+		bubble.style.left = `${clientX - size / 2}px`;
+		bubble.style.top = `${clientY - size / 2}px`;
+
+		// Random movement direction
+		bubble.style.setProperty('--rand-x', (Math.random() * 2 - 1).toString());
+		bubble.style.setProperty('--rand-y', (Math.random() * 1 + 0.5).toString());
+
+		container.appendChild(bubble);
+
+		// Remove bubble after animation completes
+		setTimeout(() => {
+			bubble.remove();
+		}, 8000);
+	}
+
+	// Slider drag functionality
+	if (typeof window !== 'undefined') {
+		window.addEventListener('DOMContentLoaded', () => {
+			// Initialize dream bubbles
+			const bubbleContainer = document.createElement('div');
+			bubbleContainer.classList.add('dream-bubble-container');
+			document.body.appendChild(bubbleContainer);
+
+			// Add click listener to document for dream bubbles
+			document.addEventListener('click', (e: MouseEvent) => createDreamBubble(e));
+			document.addEventListener('touchstart', (e: TouchEvent) => createDreamBubble(e));
+
+			// Initialize tide timer
+			updateTideTimer();
+			setInterval(updateTideTimer, 60000);
+
+			// Initialize before-after slider
+			initBeforeAfterSlider();
+
+			// Initialize ambient sound controls
+			initAmbientSounds();
+		});
+	}
+
+	// Tide timer functionality
+	function updateTideTimer() {
+		const tideElement = document.querySelector('.tide-timer');
+		if (!tideElement) return;
+
+		const now = new Date();
+		const hour = now.getHours();
+
+		// Determine tide status based on time of day
+		// Morning: Rising tide
+		// Afternoon: High tide
+		// Evening: Falling tide
+		// Night: Low tide
+		let tideStatus = '';
+		let tideIcon = '';
+		let tideColor = '';
+
+		if (hour >= 6 && hour < 12) {
+			tideStatus = 'Rising Inspiration';
+			tideIcon = '🌊';
+			tideColor = 'from-blue-400 to-cyan-300';
+		} else if (hour >= 12 && hour < 18) {
+			tideStatus = 'Peak Creativity';
+			tideIcon = '🌊🌊';
+			tideColor = 'from-blue-500 to-teal-400';
+		} else if (hour >= 18 && hour < 22) {
+			tideStatus = 'Flowing Ideas';
+			tideIcon = '🌊';
+			tideColor = 'from-blue-600 to-teal-500';
+		} else {
+			tideStatus = 'Dream Waters';
+			tideIcon = '🌙';
+			tideColor = 'from-blue-800 to-indigo-600';
+		}
+
+		tideElement.innerHTML = `
+			<div class="flex items-center gap-2">
+				<div class="tide-icon">${tideIcon}</div>
+				<div>
+					<div class="text-xs text-muted-foreground">Current Tide</div>
+					<div class="font-medium bg-gradient-to-r ${tideColor} bg-clip-text text-transparent">${tideStatus}</div>
+				</div>
+			</div>
+		`;
+	}
+
+	// Before-after slider functionality
+	function initBeforeAfterSlider() {
+		const slider = document.querySelector('.before-after-slider');
+		if (!slider) return;
+
+		const handle = slider.querySelector('.handle-circle');
+		const afterImage = slider.querySelector('.after-image');
+		const sliderContainer = slider.querySelector('.slider-container');
+
+		if (!handle || !afterImage || !sliderContainer) return;
+
+		let isDragging = false;
+
+		// Update image clipping based on handle position
+		function updateClip(x: number) {
+			const containerWidth = sliderContainer!.getBoundingClientRect().width;
+			const percentage = (x / containerWidth) * 100;
+			(afterImage as HTMLElement).style.clipPath =
+				`polygon(${percentage}% 0, 100% 0, 100% 100%, ${percentage}% 100%)`;
+			(handle as HTMLElement).style.left = `${percentage}%`;
+		}
+
+		// Handle mouse events
+		handle.addEventListener('mousedown', () => {
+			isDragging = true;
+		});
+
+		document.addEventListener('mousemove', (e: MouseEvent) => {
+			if (!isDragging) return;
+
+			const rect = sliderContainer!.getBoundingClientRect();
+			const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+			updateClip(x);
+
+			e.preventDefault();
+		});
+
+		document.addEventListener('mouseup', () => {
+			isDragging = false;
+		});
+
+		// Handle touch events for mobile
+		handle.addEventListener('touchstart', (e: Event) => {
+			isDragging = true;
+			e.preventDefault();
+		});
+
+		document.addEventListener('touchmove', (e: Event) => {
+			if (!isDragging) return;
+
+			// Type assertion for TouchEvent
+			const touchEvent = e as TouchEvent;
+			if (!touchEvent.touches || !touchEvent.touches[0]) return;
+
+			const rect = sliderContainer!.getBoundingClientRect();
+			const x = Math.max(0, Math.min(touchEvent.touches[0].clientX - rect.left, rect.width));
+			updateClip(x);
+
+			e.preventDefault();
+		});
+
+		document.addEventListener('touchend', () => {
+			isDragging = false;
+		});
+	}
+
+	// Ambient ocean sounds
+	function initAmbientSounds() {
+		const soundToggle = document.querySelector('.sound-toggle');
+		if (!soundToggle) return;
+
+		let audio: HTMLAudioElement | null = null;
+		let isPlaying = false;
+
+		soundToggle.addEventListener('click', () => {
+			if (!audio) {
+				// Create audio element for ocean sounds
+				audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-sea-waves-loop-1196.mp3');
+				audio.loop = true;
+				audio.volume = 0.2;
+			}
+
+			if (isPlaying) {
+				audio.pause();
+				isPlaying = false;
+				soundToggle.classList.remove('sound-on');
+				soundToggle.classList.add('sound-off');
+				(soundToggle as HTMLElement).setAttribute('title', 'Enable ambient ocean sounds');
+			} else {
+				audio.play().catch((e) => console.error('Could not play audio:', e));
+				isPlaying = true;
+				soundToggle.classList.remove('sound-off');
+				soundToggle.classList.add('sound-on');
+				(soundToggle as HTMLElement).setAttribute('title', 'Disable ambient ocean sounds');
+			}
+		});
+	}
+
+	import { Button } from '$lib/components/ui/button';
+	import * as Card from '$lib/components/ui/card';
+	import { Separator } from '$lib/components/ui/separator';
+	import ThemeToggle from '$lib/components/ui/theme-toggle.svelte';
+	import { onMount } from 'svelte';
+	import { site_config } from '../config';
+
+	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import CheckCircle from '@lucide/svelte/icons/check-circle';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import CloudSun from '@lucide/svelte/icons/cloud-sun';
+	import Github from '@lucide/svelte/icons/github';
+	import Image from '@lucide/svelte/icons/image';
+	import Instagram from '@lucide/svelte/icons/instagram';
+	import Linkedin from '@lucide/svelte/icons/linkedin';
+	import MousePointer from '@lucide/svelte/icons/mouse-pointer';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Star from '@lucide/svelte/icons/star';
+	import Twitter from '@lucide/svelte/icons/twitter';
+	import Waves from '@lucide/svelte/icons/waves';
+	import Zap from '@lucide/svelte/icons/zap';
+
+	// Helper function to get the right icon component
+	function getIconComponent(iconName: string) {
+		switch (iconName) {
+			case 'Zap':
+				return Zap;
+			case 'Image':
+				return Image;
+			case 'MousePointer':
+				return MousePointer;
+			case 'Waves':
+				return Waves;
+			case 'CloudSun':
+				return CloudSun;
+			default:
+				return Sparkles;
+		}
+	}
+
+	// Wave animation variables
+	let mouseX = 0;
+	let mouseY = 0;
+	let waveCanvas: HTMLCanvasElement;
+	let waveCtx: CanvasRenderingContext2D | null;
+	let wavePoints: { x: number; y: number; originalY: number; speed: number }[] = [];
+	let canvasWidth = 0;
+	let canvasHeight = 0;
+	let animationFrame: number;
+	let soundEnabled = false;
+	let audio: HTMLAudioElement;
+
+	// Dream bubble container
+	let dreamBubbleContainer: HTMLDivElement;
+
+	function handleMouseMove(event: MouseEvent) {
+		mouseX = event.clientX;
+		mouseY = event.clientY;
+
+		// Create wave effect at mouse position if within wave canvas area
+		if (waveCtx && mouseY > 0 && mouseY < canvasHeight) {
+			const waveIndex = Math.floor((mouseX / canvasWidth) * wavePoints.length);
+			if (wavePoints[waveIndex]) {
+				wavePoints[waveIndex].y = mouseY * 0.5;
+			}
+		}
+	}
+
+	function initInteractiveWave() {
+		if (!waveCanvas) return;
+
+		waveCtx = waveCanvas.getContext('2d');
+		if (!waveCtx) return;
+
+		// Set canvas size
+		canvasWidth = window.innerWidth;
+		canvasHeight = 150;
+		waveCanvas.width = canvasWidth;
+		waveCanvas.height = canvasHeight;
+
+		// Create wave points
+		const totalPoints = Math.floor(canvasWidth / 20);
+		wavePoints = [];
+
+		for (let i = 0; i < totalPoints; i++) {
+			const x = (canvasWidth / totalPoints) * i;
+			const y = canvasHeight * 0.5;
+			wavePoints.push({
+				x,
+				y,
+				originalY: y,
+				speed: 0.05 + Math.random() * 0.05
+			});
+		}
+
+		// Start animation
+		animateWave();
+	}
+
+	function animateWave() {
+		if (!waveCtx) return;
+
+		// Clear canvas
+		waveCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+		// Draw wave
+		waveCtx.beginPath();
+		waveCtx.moveTo(0, canvasHeight);
+
+		// Update wave points
+		for (let i = 0; i < wavePoints.length; i++) {
+			const point = wavePoints[i];
+
+			// Animate points back to original position
+			point.y += (point.originalY - point.y) * point.speed;
+
+			// Draw curve between points
+			if (i === 0) {
+				waveCtx.lineTo(point.x, point.y);
+			} else {
+				const prevPoint = wavePoints[i - 1];
+				const xc = (prevPoint.x + point.x) / 2;
+				const yc = (prevPoint.y + point.y) / 2;
+				waveCtx.quadraticCurveTo(prevPoint.x, prevPoint.y, xc, yc);
+			}
+		}
+
+		// Complete the wave path
+		waveCtx.lineTo(canvasWidth, canvasHeight);
+		waveCtx.lineTo(0, canvasHeight);
+		waveCtx.closePath();
+
+		// Fill with gradient
+		const gradient = waveCtx.createLinearGradient(0, 0, canvasWidth, 0);
+		gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+		gradient.addColorStop(0.5, 'rgba(45, 212, 191, 0.4)');
+		gradient.addColorStop(1, 'rgba(59, 130, 246, 0.4)');
+		waveCtx.fillStyle = gradient;
+		waveCtx.fill();
+
+		// Continue animation
+		animationFrame = requestAnimationFrame(animateWave);
+	}
+
+	onMount(() => {
+		initInteractiveWave();
+
+		// Handle window resize
+		const handleResize = () => {
+			if (animationFrame) {
+				cancelAnimationFrame(animationFrame);
+			}
+			initInteractiveWave();
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			if (animationFrame) {
+				cancelAnimationFrame(animationFrame);
+			}
+		};
+	});
+</script>
+
+<div class="relative overflow-hidden" onmousemove={handleMouseMove}>
+	<!-- Ocean-themed decorative background elements -->
+	<div
+		class="animate-drift absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-blue-400/20 blur-3xl"
+		style="animation-delay: 0s;"
+	></div>
+	<div
+		class="animate-drift absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full bg-teal-400/20 blur-3xl"
+		style="animation-delay: 2s;"
+	></div>
+	<div
+		class="animate-drift absolute bottom-0 left-1/4 h-[600px] w-[600px] rounded-full bg-cyan-400/20 blur-3xl"
+		style="animation-delay: 4s;"
+	></div>
+
+	<!-- Wave animation elements -->
+	<div class="wave-container absolute inset-0 z-0 overflow-hidden opacity-50">
+		<div class="wave wave1"></div>
+		<div class="wave wave2"></div>
+		<div class="wave wave3"></div>
+	</div>
+
+	<!-- Dream cloud animations -->
+	<div class="dream-cloud cloud1"></div>
+	<div class="dream-cloud cloud2"></div>
+	<div class="dream-cloud cloud3"></div>
+
+	<!-- Hero Section with Navbar -->
+	<header class="container relative z-10 mx-auto flex items-center justify-between py-6">
+		<div class="flex items-center gap-2">
+			<div
+				class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-teal-400"
+			>
+				<Waves class="h-6 w-6 text-white" />
+			</div>
+			<span class="text-xl font-bold">Dreamsurf</span>
+		</div>
+
+		<nav class="hidden items-center gap-6 md:flex">
+			<a href="/" class="text-sm font-medium transition-colors hover:text-blue-500">Ride the Wave</a
+			>
+			<a href="/" class="text-sm font-medium transition-colors hover:text-blue-500">Dream Gallery</a
+			>
+			<a href="/" class="text-sm font-medium transition-colors hover:text-blue-500">Surf Plans</a>
+			<a href="/" class="text-sm font-medium transition-colors hover:text-blue-500">Connect</a>
+		</nav>
+
+		<div class="flex items-center gap-2">
+			<ThemeToggle />
+			<Button class="surfboard-btn">Start Dreaming</Button>
+		</div>
+	</header>
+
+	<section class="container relative z-10 mx-auto px-4 py-24 md:py-36">
+		<div class="mx-auto max-w-4xl">
+			<div
+				class="mb-6 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500/20 to-teal-400/20 px-4 py-2 text-sm font-medium text-blue-500"
+			>
+				<CloudSun class="h-4 w-4" />
+				<span>Catch the perfect wave - Join the waitlist for early access</span>
+			</div>
+
+			<div class="flex flex-col items-center justify-center text-center">
+				<h1
+					class="mb-12 flex flex-col gap-1 text-center text-6xl font-black tracking-tight sm:text-7xl md:text-8xl lg:text-9xl"
+				>
+					<span class="sr-only">Turn dreams into designs</span>
+					<span
+						class="epic-title-first relative z-10 bg-gradient-to-r from-blue-500 to-teal-400 bg-clip-text text-transparent"
+					>
+						Dreams to
+					</span>
+					<span
+						class="epic-title-second relative z-20 -mt-5 bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent"
+						>reality</span
+					>
+				</h1>
+				<p class="mt-6 max-w-2xl text-xl text-muted-foreground md:text-2xl">
+					Surf the waves of creativity with AI-powered design. Turn your wildest dreams into
+					stunning visuals with a simple text prompt.
+				</p>
+
+				<div class="mt-12 flex flex-col gap-4 sm:flex-row">
+					<Button
+						size="lg"
+						onclick={() => (window.location.href = '/new')}
+						class="surfboard-btn group relative overflow-hidden bg-gradient-to-r from-blue-500 to-teal-400 px-8 py-6 text-lg"
+					>
+						<span class="relative z-10">Catch Your First Wave</span>
+						<div
+							class="ocean-gradient absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+						></div>
+						<ArrowRight class="relative z-10 ml-2 h-5 w-5" />
+					</Button>
+					<Button variant="outline" size="lg" class="ripple-btn px-8 py-6 text-lg"
+						>See Dream Gallery</Button
+					>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Features -->
+	<section id="features" class="relative z-10 py-24">
+		<div class="container mx-auto px-4">
+			<div class="mb-16 text-center">
+				<div
+					class="mb-3 inline-block rounded-full bg-gradient-to-r from-blue-500/20 to-teal-400/20 px-3 py-1 text-sm font-medium text-blue-500"
+				>
+					Surf Spots
+				</div>
+				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+					Design Anything with <span
+						class="bg-gradient-to-r from-blue-500 to-teal-400 bg-clip-text text-transparent"
+						>Dream Power</span
+					>
+				</h2>
+				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
+					Our cutting-edge AI understands your deepest creative dreams and transforms them into
+					professional designs in seconds.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+				{#each site_config.features as feature, i}
+					{@const IconComponent = getIconComponent(feature.icon)}
+					<Card.Root
+						class="card-hover floating-card border-0 bg-background/50 p-6 shadow-lg backdrop-blur-sm"
+						style={`animation-delay: ${i * 0.2}s`}
+					>
+						<Card.Header>
+							<div
+								class="ocean-gradient mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
+							>
+								<svelte:component this={IconComponent} class="h-7 w-7 text-white" />
+							</div>
+							<Card.Title class="text-2xl">{feature.title}</Card.Title>
+							<Card.Description class="text-base">
+								{feature.description}
+							</Card.Description>
+						</Card.Header>
+						<Card.Content>
+							<ul class="space-y-2">
+								<li class="flex items-center gap-2">
+									<CheckCircle class="h-5 w-5 text-teal-400" />
+									<span>Dream-to-design conversion</span>
+								</li>
+								<li class="flex items-center gap-2">
+									<CheckCircle class="h-5 w-5 text-teal-400" />
+									<span>Multiple wave styles</span>
+								</li>
+								<li class="flex items-center gap-2">
+									<CheckCircle class="h-5 w-5 text-teal-400" />
+									<span>Rapid dream surfing</span>
+								</li>
+							</ul>
+						</Card.Content>
+						<Card.Footer>
+							<Button variant="ghost" class="ripple-btn group w-full justify-between">
+								Ride This Wave
+								<ChevronRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+							</Button>
+						</Card.Footer>
+					</Card.Root>
+				{/each}
+			</div>
+
+			<!-- Design Types -->
+			<div class="mt-20">
+				<div class="mb-12 text-center">
+					<h3 class="text-2xl font-bold tracking-tight sm:text-3xl">
+						What Can You Create with Dreamsurf?
+					</h3>
+					<p class="mx-auto mt-4 max-w-2xl text-muted-foreground">
+						Ride the waves of creativity to any shore
+					</p>
+				</div>
+
+				<div class="flex flex-wrap justify-center gap-4">
+					{#each site_config.design_types as designType, i}
+						<div
+							class="surf-spot floating-element rounded-full bg-background/80 px-6 py-3 shadow backdrop-blur-sm"
+							style={`animation-delay: ${i * 0.15}s`}
+						>
+							<span class="font-medium">{designType}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Dream to Reality Slider -->
+	<section
+		class="relative z-10 bg-gradient-to-b from-transparent to-blue-50/30 py-24 dark:to-blue-950/30"
+	>
+		<div class="container mx-auto px-4">
+			<div class="mb-16 text-center">
+				<div
+					class="mb-3 inline-block rounded-full bg-gradient-to-r from-blue-500/20 to-teal-400/20 px-3 py-1 text-sm font-medium text-blue-500"
+				>
+					Dream to Reality
+				</div>
+				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+					See the <span
+						class="bg-gradient-to-r from-blue-500 to-teal-400 bg-clip-text text-transparent"
+						>Transformation</span
+					>
+				</h2>
+				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
+					Watch your text prompts transform into stunning designs
+				</p>
+			</div>
+
+			<div class="mx-auto max-w-6xl">
+				<!-- Before-After Slider -->
+				<div class="before-after-slider">
+					<div class="slider-container">
+						<div class="before-image">
+							<div class="text-prompt">
+								<div class="prompt-container">
+									<div class="prompt-header">
+										<Sparkles class="h-5 w-5 text-blue-500" />
+										<h3 class="text-lg font-medium">Your Dream</h3>
+									</div>
+									<div class="prompt-content">
+										<p class="font-mono text-muted-foreground">
+											"Create a modern landing page for a creative agency with blue gradient,
+											minimalist design, and plenty of whitespace"
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="after-image">
+							<img
+								src="https://placehold.co/1200x800/2dd4bf/FFFFFF/png?text=Creative+Agency+Design"
+								alt="Generated design"
+								class="h-auto w-full rounded-lg shadow-xl"
+							/>
+						</div>
+						<div class="slider-handle">
+							<div class="handle">
+								<div class="handle-line"></div>
+								<div class="handle-circle">
+									<Waves class="h-4 w-4 text-white" />
+								</div>
+								<div class="handle-line"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- More Examples -->
+				<div class="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+					<div class="example-card">
+						<div class="example-prompt">
+							<p class="font-mono text-xs text-blue-500">
+								"E-commerce product page for eco-friendly water bottles"
+							</p>
+						</div>
+						<div class="example-result">
+							<img
+								src="https://placehold.co/400x300/3b82f6/FFFFFF/png?text=Eco+Bottles"
+								alt="E-commerce example"
+								class="h-auto w-full rounded-lg shadow-lg"
+							/>
+						</div>
+					</div>
+					<div class="example-card">
+						<div class="example-prompt">
+							<p class="font-mono text-xs text-blue-500">
+								"Travel blog with photo gallery and booking form"
+							</p>
+						</div>
+						<div class="example-result">
+							<img
+								src="https://placehold.co/400x300/3b82f6/FFFFFF/png?text=Travel+Blog"
+								alt="Travel blog example"
+								class="h-auto w-full rounded-lg shadow-lg"
+							/>
+						</div>
+					</div>
+					<div class="example-card">
+						<div class="example-prompt">
+							<p class="font-mono text-xs text-blue-500">
+								"Mobile app dashboard for fitness tracking"
+							</p>
+						</div>
+						<div class="example-result">
+							<img
+								src="https://placehold.co/400x300/3b82f6/FFFFFF/png?text=Fitness+App"
+								alt="App dashboard example"
+								class="h-auto w-full rounded-lg shadow-lg"
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Testimonials -->
+	<section id="testimonials" class="relative z-10 py-24">
+		<div class="container mx-auto px-4">
+			<div class="mb-16 text-center">
+				<div
+					class="mb-3 inline-block rounded-full bg-gradient-to-r from-blue-500/20 to-teal-400/20 px-3 py-1 text-sm font-medium text-blue-500"
+				>
+					Wave Reviews
+				</div>
+				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+					Loved by <span
+						class="bg-gradient-to-r from-blue-500 to-teal-400 bg-clip-text text-transparent"
+						>Dream Surfers Worldwide</span
+					>
+				</h2>
+				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
+					See what designers, marketers, and entrepreneurs are saying about Dreamsurf.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+				<Card.Root class="message-bottle relative overflow-hidden border-0 p-8 shadow-lg">
+					<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/5"></div>
+					<div class="absolute -bottom-5 -left-5 h-40 w-40 rounded-full bg-teal-400/5"></div>
+					<Card.Content>
+						<div class="flex">
+							{#each Array(5) as _}
+								<Star class="h-5 w-5 fill-teal-400 text-teal-400" />
+							{/each}
+						</div>
+						<p class="my-6 text-xl font-medium italic">
+							"Dreamsurf has revolutionized my workflow. What used to take hours in design software
+							now takes minutes with a simple text prompt. It's like catching the perfect wave every
+							time."
+						</p>
+						<div class="flex items-center gap-4">
+							<div
+								class="h-14 w-14 overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-teal-400"
+							></div>
+							<div>
+								<p class="text-lg font-semibold">Sarah Johnson</p>
+								<p class="text-muted-foreground">Dream Director, Creativa</p>
+							</div>
+						</div>
+					</Card.Content>
+				</Card.Root>
+
+				<Card.Root class="message-bottle relative overflow-hidden border-0 p-8 shadow-lg">
+					<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-teal-400/5"></div>
+					<div class="absolute -bottom-5 -left-5 h-40 w-40 rounded-full bg-cyan-300/5"></div>
+					<Card.Content>
+						<div class="flex">
+							{#each Array(5) as _}
+								<Star class="h-5 w-5 fill-teal-400 text-teal-400" />
+							{/each}
+						</div>
+						<p class="my-6 text-xl font-medium italic">
+							"As a non-designer running a startup, Dreamsurf has been a game-changer. I can create
+							professional marketing materials without hiring a design agency. It's like having my
+							own wave of creativity on demand."
+						</p>
+						<div class="flex items-center gap-4">
+							<div
+								class="h-14 w-14 overflow-hidden rounded-full bg-gradient-to-r from-teal-400 to-cyan-300"
+							></div>
+							<div>
+								<p class="text-lg font-semibold">Mark Williams</p>
+								<p class="text-muted-foreground">Founder, WaveCrest</p>
+							</div>
+						</div>
+					</Card.Content>
+				</Card.Root>
+			</div>
+		</div>
+	</section>
+
+	<!-- Pricing -->
+	<section id="pricing" class="relative z-10 py-24">
+		<div class="container mx-auto px-4">
+			<div class="mb-16 text-center">
+				<div
+					class="mb-3 inline-block rounded-full bg-gradient-to-r from-blue-500/20 to-teal-400/20 px-3 py-1 text-sm font-medium text-blue-500"
+				>
+					Surf Plans
+				</div>
+				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+					Simple, <span
+						class="bg-gradient-to-r from-blue-500 to-teal-400 bg-clip-text text-transparent"
+						>Wave Rider Pricing</span
+					>
+				</h2>
+				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
+					Choose the plan that fits your creative dreams, from casual surfers to professional wave
+					riders.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+				<Card.Root class="tide-card relative border-0 p-8 shadow-lg">
+					<Card.Header>
+						<Card.Title class="text-2xl">Dream Paddler</Card.Title>
+						<Card.Description class="text-base">
+							Perfect for dreamers just catching their first waves
+						</Card.Description>
+					</Card.Header>
+					<Card.Content>
+						<div class="mb-8 mt-6">
+							<span class="text-5xl font-bold">$19</span>
+							<span class="text-muted-foreground">/month</span>
+							<p class="mt-2 text-sm text-muted-foreground">Billed annually</p>
+						</div>
+						<ul class="space-y-4 text-base">
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>50 dream designs per month</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Basic wave tools</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Standard export formats</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Email support</span>
+							</li>
+						</ul>
+					</Card.Content>
+					<Card.Footer>
+						<Button variant="outline" class="ripple-btn w-full text-base">Catch This Wave</Button>
+					</Card.Footer>
+				</Card.Root>
+
+				<Card.Root class="tide-card relative border-0 p-8 shadow-xl">
+					<div
+						class="absolute -top-3 left-0 right-0 mx-auto w-fit rounded-full bg-gradient-to-r from-blue-500 to-teal-400 px-4 py-1 text-center text-sm font-medium text-white"
+					>
+						Perfect Wave
+					</div>
+					<div class="ocean-gradient absolute inset-0 -z-10 opacity-5"></div>
+					<Card.Header>
+						<Card.Title class="text-2xl">Wave Rider</Card.Title>
+						<Card.Description class="text-base"
+							>Ideal for professional dream surfers</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						<div class="mb-8 mt-6">
+							<span class="text-5xl font-bold">$49</span>
+							<span class="text-muted-foreground">/month</span>
+							<p class="mt-2 text-sm text-muted-foreground">Billed annually</p>
+						</div>
+						<ul class="space-y-4 text-base">
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Unlimited dream designs</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Advanced wave shaping tools</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Dream board integration</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Priority support</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Team dream collaboration</span>
+							</li>
+						</ul>
+					</Card.Content>
+					<Card.Footer>
+						<Button class="w-full bg-gradient-to-r from-blue-500 to-teal-400 text-base"
+							>Catch This Wave</Button
+						>
+					</Card.Footer>
+				</Card.Root>
+
+				<Card.Root class="tide-card relative border-0 p-8 shadow-lg">
+					<Card.Header>
+						<Card.Title class="text-2xl">Big Wave</Card.Title>
+						<Card.Description class="text-base">
+							For organizations with grand dream visions
+						</Card.Description>
+					</Card.Header>
+					<Card.Content>
+						<div class="mb-8 mt-6">
+							<span class="text-5xl font-bold">$149</span>
+							<span class="text-muted-foreground">/month</span>
+							<p class="mt-2 text-sm text-muted-foreground">Billed annually</p>
+						</div>
+						<ul class="space-y-4 text-base">
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Unlimited everything</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Custom dream AI training</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Wave API access</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>Dedicated wave guide</span>
+							</li>
+							<li class="flex items-center gap-3">
+								<CheckCircle class="h-5 w-5 text-teal-400" />
+								<span>SSO & advanced security</span>
+							</li>
+						</ul>
+					</Card.Content>
+					<Card.Footer>
+						<Button variant="outline" class="ripple-btn w-full text-base"
+							>Contact Wave Masters</Button
+						>
+					</Card.Footer>
+				</Card.Root>
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA Section -->
+	<section id="contact" class="relative z-10 py-20">
+		<div class="container mx-auto px-4">
+			<div
+				class="overflow-hidden rounded-3xl bg-gradient-to-r from-blue-500 to-teal-400 shadow-2xl"
+			>
+				<div class="ocean-gradient p-12 md:p-16">
+					<div class="mx-auto max-w-3xl text-center text-white">
+						<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+							Ready to ride the wave of creativity?
+						</h2>
+						<p class="mx-auto mt-4 max-w-2xl text-xl opacity-90">
+							Join thousands of dream surfers already using Dreamsurf to bring their dreams to life.
+						</p>
+						<div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+							<Button variant="secondary" size="lg" class="surfboard-btn text-lg">
+								Start Surfing Free
+								<ArrowRight class="ml-2 h-5 w-5" />
+							</Button>
+							<Button
+								variant="outline"
+								size="lg"
+								class="ripple-btn border-white bg-transparent text-lg text-white hover:bg-white/20"
+							>
+								Watch Dream Demo
+							</Button>
+						</div>
+
+						<div class="mt-12 flex flex-wrap items-center justify-center gap-8">
+							<p class="flex items-center gap-2 text-base">
+								<CheckCircle class="h-5 w-5" />
+								<span>No credit card required</span>
+							</p>
+							<p class="flex items-center gap-2 text-base">
+								<CheckCircle class="h-5 w-5" />
+								<span>5 free dream designs</span>
+							</p>
+							<p class="flex items-center gap-2 text-base">
+								<CheckCircle class="h-5 w-5" />
+								<span>Ride away anytime</span>
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="relative z-10 pb-12 pt-24">
+		<div class="container mx-auto px-4">
+			<div class="grid grid-cols-1 gap-8 md:grid-cols-5">
+				<div class="md:col-span-2">
+					<div class="flex items-center gap-2">
+						<div
+							class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-teal-400"
+						>
+							<Waves class="h-6 w-6 text-white" />
+						</div>
+						<span class="text-xl font-bold">Dreamsurf</span>
+					</div>
+					<p class="mt-4 max-w-md text-muted-foreground">
+						Dreamsurf is the AI-powered platform that turns dream descriptions into beautiful
+						designs in seconds. Ride the wave of creativity.
+					</p>
+					<div class="mt-6 flex space-x-4">
+						<a href={site_config.socials.twitter} target="_blank" rel="noopener noreferrer">
+							<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+								<Twitter class="h-5 w-5" />
+							</Button>
+						</a>
+						<a href={site_config.socials.linkedin} target="_blank" rel="noopener noreferrer">
+							<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+								<Linkedin class="h-5 w-5" />
+							</Button>
+						</a>
+						<a href={site_config.socials.github} target="_blank" rel="noopener noreferrer">
+							<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+								<Github class="h-5 w-5" />
+							</Button>
+						</a>
+						<a href={site_config.socials.instagram} target="_blank" rel="noopener noreferrer">
+							<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+								<Instagram class="h-5 w-5" />
+							</Button>
+						</a>
+					</div>
+				</div>
+
+				<div>
+					<h3 class="mb-4 text-lg font-semibold">Surf Zones</h3>
+					<ul class="space-y-2">
+						<li>
+							<a
+								href="#features"
+								class="text-muted-foreground transition-colors hover:text-blue-500">Surf Spots</a
+							>
+						</li>
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Wave Types</a
+							>
+						</li>
+						<li>
+							<a href="#pricing" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Surf Plans</a
+							>
+						</li>
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Dream Gallery</a
+							>
+						</li>
+					</ul>
+				</div>
+
+				<div>
+					<h3 class="mb-4 text-lg font-semibold">Dream Team</h3>
+					<ul class="space-y-2">
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Our Story</a
+							>
+						</li>
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Join Us</a
+							>
+						</li>
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Wave Journal</a
+							>
+						</li>
+						<li>
+							<a
+								href={`mailto:${site_config.contact.email}`}
+								class="text-muted-foreground transition-colors hover:text-blue-500">Connect</a
+							>
+						</li>
+					</ul>
+				</div>
+
+				<div>
+					<h3 class="mb-4 text-lg font-semibold">Surf Guide</h3>
+					<ul class="space-y-2">
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Wave Manual</a
+							>
+						</li>
+						<li>
+							<a
+								href={`mailto:${site_config.contact.support}`}
+								class="text-muted-foreground transition-colors hover:text-blue-500">Wave Support</a
+							>
+						</li>
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Surf Lessons</a
+							>
+						</li>
+						<li>
+							<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+								>Surf Community</a
+							>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<Separator class="my-8" />
+
+			<div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+				<p class="text-sm text-muted-foreground">
+					© {new Date().getFullYear()}
+					Dreamsurf. All waves reserved.
+				</p>
+				<div class="flex gap-6">
+					<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-blue-500"
+						>Privacy Policy</a
+					>
+					<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-blue-500"
+						>Terms of Service</a
+					>
+					<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-blue-500"
+						>Cookie Policy</a
+					>
+				</div>
+			</div>
+		</div>
+	</footer>
+</div>
+
+<style>
+	/* Ocean gradient */
+	.ocean-gradient {
+		background: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+	}
+
+	/* Text gradient */
+	.text-gradient {
+		background: linear-gradient(to right, #3b82f6, #2dd4bf);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		display: inline-block;
+	}
+
+	/* Epic title styling */
+	.epic-title-first,
+	.epic-title-second {
+		display: inline-block;
+		position: relative;
+		filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+	}
+
+	/* Wave animations */
+	.wave-container {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	.wave {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 200%;
+		height: 100px;
+		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='%233b82f6'/%3E%3Cpath d='M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z' opacity='.5' fill='%232dd4bf'/%3E%3Cpath d='M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z' opacity='.25' fill='%2322d3ee'/%3E%3C/svg%3E")
+			repeat-x;
+		background-size: 1200px 100px;
+		animation: wave 25s linear infinite;
+	}
+
+	.wave1 {
+		animation-delay: 0s;
+		z-index: 1;
+		opacity: 0.3;
+	}
+
+	.wave2 {
+		animation-delay: -5s;
+		z-index: 2;
+		opacity: 0.2;
+		bottom: 10px;
+	}
+
+	.wave3 {
+		animation-delay: -10s;
+		z-index: 3;
+		opacity: 0.1;
+		bottom: 20px;
+	}
+
+	@keyframes wave {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-50%);
+		}
+	}
+
+	/* Dream cloud animations */
+	.dream-cloud {
+		position: absolute;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 50%;
+		filter: blur(20px);
+		animation: float 20s ease-in-out infinite;
+	}
+
+	.cloud1 {
+		width: 150px;
+		height: 60px;
+		top: 15%;
+		left: 10%;
+		opacity: 0.3;
+	}
+
+	.cloud2 {
+		width: 100px;
+		height: 40px;
+		top: 35%;
+		right: 15%;
+		animation-delay: 5s;
+		opacity: 0.2;
+	}
+
+	.cloud3 {
+		width: 120px;
+		height: 50px;
+		bottom: 25%;
+		left: 20%;
+		animation-delay: 10s;
+		opacity: 0.25;
+	}
+
+	@keyframes float {
+		0% {
+			transform: translateY(0) translateX(0);
+		}
+		50% {
+			transform: translateY(-20px) translateX(20px);
+		}
+		100% {
+			transform: translateY(0) translateX(0);
+		}
+	}
+
+	/* Floating elements */
+	.floating-element {
+		animation: float-subtle 4s ease-in-out infinite;
+	}
+
+	@keyframes float-subtle {
+		0% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-5px);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+
+	/* Card hover effects */
+	.card-hover {
+		transition:
+			transform 0.3s ease,
+			box-shadow 0.3s ease;
+	}
+
+	.card-hover:hover {
+		transform: translateY(-5px);
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.1),
+			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	}
+
+	/* Message bottle styling */
+	.message-bottle {
+		position: relative;
+		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(240, 249, 255, 0.9));
+		border-radius: 16px;
+		overflow: hidden;
+		transform: rotate(-1deg);
+		transition: transform 0.3s ease;
+	}
+
+	.message-bottle:hover {
+		transform: rotate(0deg) translateY(-5px);
+	}
+
+	/* Floating cards with different delays */
+	.floating-card {
+		animation: float-card 6s ease-in-out infinite;
+	}
+
+	@keyframes float-card {
+		0% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+
+	/* Tide card effect */
+	.tide-card {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.tide-card::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 5px;
+		background: linear-gradient(to right, #3b82f6, #2dd4bf);
+		transform: scaleX(0);
+		transform-origin: left;
+		transition: transform 0.5s ease;
+	}
+
+	.tide-card:hover::after {
+		transform: scaleX(1);
+	}
+
+	/* Ripple button effect */
+	.ripple-btn {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.ripple-btn::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 5px;
+		height: 5px;
+		background: rgba(59, 130, 246, 0.3);
+		opacity: 0;
+		border-radius: 100%;
+		transform: scale(1, 1) translate(-50%, -50%);
+		transform-origin: 50% 50%;
+	}
+
+	.ripple-btn:hover::after {
+		animation: ripple 1s ease-out;
+	}
+
+	@keyframes ripple {
+		0% {
+			transform: scale(0, 0);
+			opacity: 0.5;
+		}
+		20% {
+			transform: scale(25, 25);
+			opacity: 0.3;
+		}
+		100% {
+			opacity: 0;
+			transform: scale(40, 40);
+		}
+	}
+
+	/* Surfboard button effect */
+	.surfboard-btn {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.surfboard-btn::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			rgba(255, 255, 255, 0) 0%,
+			rgba(255, 255, 255, 0.2) 50%,
+			rgba(255, 255, 255, 0) 100%
+		);
+		transition: left 0.5s ease;
+	}
+
+	.surfboard-btn:hover::before {
+		left: 100%;
+	}
+
+	/* Drift animation for background elements */
+	.animate-drift {
+		animation: drift 20s ease-in-out infinite alternate;
+	}
+
+	@keyframes drift {
+		0% {
+			transform: translate(0, 0);
+		}
+		100% {
+			transform: translate(50px, 20px);
+		}
+	}
+
+	/* Surf spot hover */
+	.surf-spot {
+		transition: all 0.3s ease;
+	}
+
+	.surf-spot:hover {
+		background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(45, 212, 191, 0.1));
+		transform: translateY(-3px);
+	}
+
+	/* Surfboard cursor */
+	.surfboard-btn:hover {
+		cursor:
+			url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 11c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l9-4 9 4v6z' fill='%233b82f6' stroke='white' stroke-width='1'/%3E%3C/svg%3E"),
+			auto;
+	}
+
+	.ripple-btn:hover {
+		cursor:
+			url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20.66 7.26c0 2.32-1.88 4.2-4.2 4.2S12.27 9.58 12.27 7.26c0-1.28.59-2.37 1.5-3.15H8.24c.91.78 1.5 1.87 1.5 3.15 0 2.31-1.88 4.2-4.2 4.2S1.34 9.58 1.34 7.26 3.22 3.06 5.54 3.06h11.61c2.03 0 3.51 1.79 3.51 4.2z' fill='%232dd4bf' stroke='white' stroke-width='1'/%3E%3C/svg%3E"),
+			auto;
+	}
+
+	.dream-bubble-container {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		z-index: 5;
+	}
+
+	.dream-bubble {
+		position: absolute;
+		background: radial-gradient(circle at center, rgba(59, 130, 246, 0.2), rgba(45, 212, 191, 0.2));
+		border-radius: 50%;
+		transform: scale(0);
+		animation: bubble-rise 8s ease-out forwards;
+		pointer-events: none;
+	}
+
+	@keyframes bubble-rise {
+		0% {
+			transform: scale(0) translate(0, 0);
+			opacity: 0;
+		}
+		10% {
+			transform: scale(1) translate(0, 0);
+			opacity: 0.8;
+		}
+		100% {
+			transform: scale(0.5) translate(calc(var(--rand-x) * 100px), calc(var(--rand-y) * -300px));
+			opacity: 0;
+		}
+	}
+
+	/* Interactive Wave */
+	.interactive-wave-container {
+		position: relative;
+		height: 150px;
+		overflow: hidden;
+	}
+
+	.interactive-wave {
+		width: 100%;
+		height: 100%;
+	}
+
+	/* Dream to Reality Slider */
+	.before-after-slider {
+		position: relative;
+		width: 100%;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.1),
+			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	}
+
+	.slider-container {
+		position: relative;
+		width: 100%;
+		height: 500px;
+		overflow: hidden;
+	}
+
+	.before-image,
+	.after-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.before-image {
+		background-color: #f8fafc;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.text-prompt {
+		max-width: 80%;
+		background: rgba(255, 255, 255, 0.9);
+		border-radius: 12px;
+		padding: 16px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.prompt-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 8px;
+	}
+
+	.prompt-content {
+		background-color: #f1f5f9;
+		padding: 12px;
+		border-radius: 8px;
+	}
+
+	.after-image {
+		background-color: #f8fafc;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.slider-handle {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		height: 100%;
+		width: 2px;
+		cursor: grab;
+	}
+
+	.handle {
+		position: relative;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.handle-line {
+		flex: 1;
+		width: 2px;
+		background: white;
+	}
+
+	.handle-circle {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 32px;
+		height: 32px;
+		background: linear-gradient(135deg, #3b82f6, #2dd4bf);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		cursor: grab;
+	}
+
+	.example-card {
+		border-radius: 12px;
+		overflow: hidden;
+		background: rgba(255, 255, 255, 0.5);
+		backdrop-filter: blur(8px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+		transition: transform 0.3s ease;
+	}
+
+	.example-card:hover {
+		transform: translateY(-5px);
+	}
+
+	.example-prompt {
+		padding: 12px;
+		background: rgba(59, 130, 246, 0.05);
+		border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+	}
+
+	.example-result {
+		padding: 12px;
+	}
+
+	/* Sound toggle */
+	.sound-toggle {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.9);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		z-index: 100;
+		transition: all 0.3s ease;
+	}
+
+	.sound-toggle:hover {
+		transform: scale(1.1);
+	}
+
+	.sound-on {
+		background: linear-gradient(135deg, #3b82f6, #2dd4bf);
+		color: white;
+	}
+
+	.sound-off {
+		background: rgba(255, 255, 255, 0.9);
+		color: #64748b;
+	}
+
+	/* Tide timer */
+	.tide-timer {
+		position: fixed;
+		bottom: 20px;
+		left: 20px;
+		padding: 8px 12px;
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.9);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		z-index: 100;
+	}
+
+	.tide-icon {
+		font-size: 20px;
+		line-height: 1;
+	}
+</style>

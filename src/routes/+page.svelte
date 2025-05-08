@@ -1,582 +1,430 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
 	import { Separator } from '$lib/components/ui/separator';
 	import ThemeToggle from '$lib/components/ui/theme-toggle.svelte';
 	import { site_config } from '../config';
 
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import CheckCircle from '@lucide/svelte/icons/check-circle';
-	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Github from '@lucide/svelte/icons/github';
-	import Image from '@lucide/svelte/icons/image';
 	import Instagram from '@lucide/svelte/icons/instagram';
 	import Linkedin from '@lucide/svelte/icons/linkedin';
-	import MousePointer from '@lucide/svelte/icons/mouse-pointer';
-	import Palette from '@lucide/svelte/icons/palette';
-	import Sparkles from '@lucide/svelte/icons/sparkles';
-	import Star from '@lucide/svelte/icons/star';
 	import Twitter from '@lucide/svelte/icons/twitter';
-	import Zap from '@lucide/svelte/icons/zap';
-
-	// Helper function to get the right icon component
-	function getIconComponent(iconName: string) {
-		switch (iconName) {
-			case 'Zap':
-				return Zap;
-			case 'Image':
-				return Image;
-			case 'MousePointer':
-				return MousePointer;
-			default:
-				return Sparkles;
-		}
-	}
 </script>
 
 <div class="relative overflow-hidden">
-	<!-- Decorative background elements -->
-	<div
-		class="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl"
-	></div>
-	<div
-		class="absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full bg-secondary/10 blur-3xl"
-	></div>
-	<div
-		class="absolute bottom-0 left-1/4 h-[600px] w-[600px] rounded-full bg-accent/10 blur-3xl"
-	></div>
+	<!-- Blurred background - this is the only blurred part -->
+	<div class="fixed inset-0 z-0">
+		<div
+			class="animate-drift absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-blue-400/20 blur-3xl"
+			style="animation-delay: 0s;"
+		></div>
+		<div
+			class="animate-drift absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full bg-teal-400/20 blur-3xl"
+			style="animation-delay: 2s;"
+		></div>
+		<div
+			class="animate-drift absolute bottom-0 left-1/4 h-[600px] w-[600px] rounded-full bg-cyan-400/20 blur-3xl"
+			style="animation-delay: 4s;"
+		></div>
+	</div>
 
-	<!-- Hero Section with Navbar -->
-	<header class="container relative z-10 mx-auto flex items-center justify-between py-6">
-		<div class="flex items-center gap-2">
-			<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-				<Palette class="h-6 w-6 text-primary-foreground" />
-			</div>
-			<span class="text-xl font-bold">{site_config.site_name}</span>
-		</div>
+	<!-- Main content container with margin -->
+	<div class="relative z-10 min-h-screen p-4 md:p-8 lg:p-12">
+		<!-- Hero image container with rounded corners -->
+		<div class="relative mb-8 overflow-hidden rounded-3xl">
+			<!-- Background image at the top -->
+			<img src="/bg.png" alt="Dreamsurf Background" class="h-[80vh] w-full object-cover" />
 
-		<nav class="hidden items-center gap-6 md:flex">
-			<a href="/" class="text-sm font-medium hover:text-primary">Features</a>
-			<a href="/" class="text-sm font-medium hover:text-primary">Testimonials</a>
-			<a href="/" class="text-sm font-medium hover:text-primary">Pricing</a>
-			<a href="/" class="text-sm font-medium hover:text-primary">Contact</a>
-		</nav>
+			<!-- Navbar overlay -->
+			<header class="absolute top-0 z-20 w-full">
+				<div class="container mx-auto flex items-center justify-between py-6">
+					<div class="flex items-center gap-2">
+						<img src="/logo.png" alt="Dreamsurf Logo" class="h-10" />
+					</div>
 
-		<div class="flex items-center gap-2">
-			<ThemeToggle />
-			<Button>Get Started</Button>
-		</div>
-	</header>
+					<div class="flex items-center gap-2">
+						<ThemeToggle />
+						<Button
+							variant="secondary"
+							onclick={() => (window.location.href = '/new')}
+							class="ripple-btn">Start Dreaming</Button
+						>
+					</div>
+				</div>
+			</header>
 
-	<section class="container relative z-10 mx-auto px-4 py-24 md:py-36">
-		<div class="mx-auto max-w-4xl">
-			<div
-				class="mb-6 flex items-center justify-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary"
-			>
-				<Sparkles class="h-4 w-4" />
-				<span>Launching soon - Join the waitlist for early access</span>
-			</div>
-
-			<div class="flex flex-col items-center justify-center text-center">
-				<h1
-					class="mb-12 flex flex-col gap-1 text-center text-6xl font-black tracking-tight sm:text-7xl md:text-8xl lg:text-9xl"
-				>
-					<span class="sr-only">{site_config.tag_line}</span>
-					<span class="epic-title-first relative z-10"> Text to </span>
-					<span class="epic-title-second relative z-20 -mt-5">imagination</span>
-				</h1>
-				<p class="mt-6 max-w-2xl text-xl text-muted-foreground md:text-2xl">
-					{site_config.site_description} Create stunning visuals, graphics, and layouts from simple text
-					prompts in seconds.
-				</p>
-
-				<div class="mt-12 flex flex-col gap-4 sm:flex-row">
+			<!-- Floating text centered on the image -->
+			<div class="absolute inset-0 z-10 flex flex-col items-center justify-center">
+				<div class="text-center">
+					<h1 class="mb-6 text-5xl font-bold text-white drop-shadow-lg md:text-7xl">
+						Text to Design
+					</h1>
 					<Button
+						variant="secondary"
 						size="lg"
-						onclick={() => (window.location.href = '/new')}
-						class="group relative overflow-hidden bg-primary px-8 py-6 text-lg"
+						onclick={() => (window.location.href = '/waitlist')}
+						class="surfboard-btn text-lg"
 					>
-						<span class="relative z-10">Create Your First Design</span>
-						<div
-							class="hero-gradient absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-						></div>
-						<ArrowRight class="relative z-10 ml-2 h-5 w-5" />
+						Join Waitlist
+						<ArrowRight class="ml-2 h-5 w-5" />
 					</Button>
-					<Button variant="outline" size="lg" class="px-8 py-6 text-lg">See Examples</Button>
-				</div>
-
-				<div class="mt-16 flex flex-wrap items-center justify-center gap-8">
-					<div class="flex items-center gap-2">
-						<div class="flex -space-x-2">
-							<div class="h-10 w-10 rounded-full bg-primary"></div>
-							<div class="h-10 w-10 rounded-full bg-secondary"></div>
-							<div class="h-10 w-10 rounded-full bg-accent"></div>
-						</div>
-						<p class="text-sm text-muted-foreground">
-							<span class="font-medium">10,000+</span> designs created daily
-						</p>
-					</div>
-					<div class="flex items-center gap-2">
-						<div class="flex">
-							{#each Array(5) as _}
-								<Star class="h-5 w-5 fill-primary text-primary" />
-							{/each}
-						</div>
-						<p class="text-sm text-muted-foreground">
-							<span class="font-medium">4.9/5</span> average rating
-						</p>
-					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Abstract shapes -->
-		<div
-			class="blob-animation absolute -right-40 top-1/3 h-80 w-80 bg-gradient-to-r from-primary to-secondary opacity-30 blur-xl"
-		></div>
-		<div
-			class="blob-animation absolute -left-40 top-2/3 h-60 w-60 bg-gradient-to-r from-accent to-secondary opacity-20 blur-xl"
-		></div>
-	</section>
-
-	<!-- Features -->
-	<section id="features" class="relative z-10 py-24">
-		<div class="container mx-auto px-4">
-			<div class="mb-16 text-center">
+		<!-- CTA Section -->
+		<section id="contact" class="relative z-10 py-16">
+			<div class="container mx-auto px-4">
 				<div
-					class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+					class="overflow-hidden rounded-3xl bg-gradient-to-r from-blue-500 to-teal-400 shadow-2xl"
 				>
-					Features
-				</div>
-				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-					Design Anything with <span class="text-gradient">Simple Text</span>
-				</h2>
-				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
-					Our cutting-edge AI understands your creative vision and transforms it into professional
-					designs in seconds.
-				</p>
-			</div>
-
-			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-				{#each site_config.features as feature}
-					{@const IconComponent = getIconComponent(feature.icon)}
-					<Card.Root class="card-hover border-0 bg-background/50 p-6 shadow-lg backdrop-blur-sm">
-						<Card.Header>
-							<div class="hero-gradient mb-4 flex h-14 w-14 items-center justify-center rounded-xl">
-								<svelte:component this={IconComponent} class="h-7 w-7 text-white" />
+					<div class="ocean-gradient p-12 md:p-16">
+						<div class="mx-auto max-w-3xl text-center text-white">
+							<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+								Ready to ride the wave of creativity?
+							</h2>
+							<p class="mx-auto mt-4 max-w-2xl text-xl opacity-90">
+								Join thousands of dream surfers already using Dreamsurf to bring their dreams to
+								life.
+							</p>
+							<div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+								<Button
+									variant="secondary"
+									size="lg"
+									onclick={() => (window.location.href = '/new')}
+									class="surfboard-btn text-lg"
+								>
+									Start Surfing Free
+									<ArrowRight class="ml-2 h-5 w-5" />
+								</Button>
+								<Button
+									variant="outline"
+									size="lg"
+									onclick={() => (window.location.href = '/demo')}
+									class="ripple-btn border-white bg-transparent text-lg text-white hover:bg-white/20"
+								>
+									Watch Dream Demo
+								</Button>
 							</div>
-							<Card.Title class="text-2xl">{feature.title}</Card.Title>
-							<Card.Description class="text-base">
-								{feature.description}
-							</Card.Description>
-						</Card.Header>
-						<Card.Content>
-							<ul class="space-y-2">
-								<li class="flex items-center gap-2">
-									<CheckCircle class="h-5 w-5 text-primary" />
-									<span>Text-to-image conversion</span>
-								</li>
-								<li class="flex items-center gap-2">
-									<CheckCircle class="h-5 w-5 text-primary" />
-									<span>Multiple style options</span>
-								</li>
-								<li class="flex items-center gap-2">
-									<CheckCircle class="h-5 w-5 text-primary" />
-									<span>Rapid iterations</span>
-								</li>
-							</ul>
-						</Card.Content>
-						<Card.Footer>
-							<Button variant="ghost" class="group w-full justify-between">
-								Learn More
-								<ChevronRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
-							</Button>
-						</Card.Footer>
-					</Card.Root>
-				{/each}
-			</div>
 
-			<!-- Design Types -->
-			<div class="mt-20">
-				<div class="mb-12 text-center">
-					<h3 class="text-2xl font-bold tracking-tight sm:text-3xl">
-						What Can You Create with {site_config.site_name}?
-					</h3>
-					<p class="mx-auto mt-4 max-w-2xl text-muted-foreground">
-						Versatile design generation for all your creative needs
+							<div class="mt-12 flex flex-wrap items-center justify-center gap-8">
+								<p class="flex items-center gap-2 text-base">
+									<CheckCircle class="h-5 w-5" />
+									<span>No credit card required</span>
+								</p>
+								<p class="flex items-center gap-2 text-base">
+									<CheckCircle class="h-5 w-5" />
+									<span>5 free dream designs</span>
+								</p>
+								<p class="flex items-center gap-2 text-base">
+									<CheckCircle class="h-5 w-5" />
+									<span>Ride away anytime</span>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Footer -->
+		<footer class="relative z-10 pb-12 pt-24">
+			<div class="container mx-auto px-4">
+				<div class="grid grid-cols-1 gap-8 md:grid-cols-5">
+					<div class="md:col-span-2">
+						<div class="flex items-center gap-2">
+							<div class="flex h-10 w-10 items-center justify-center rounded-lg">
+								<img src="/logo.png" alt="Dreamsurf Logo" class="h-10" />
+							</div>
+							<span class="text-xl font-bold">Dreamsurf</span>
+						</div>
+						<p class="mt-4 max-w-md text-muted-foreground">
+							Dreamsurf is the AI-powered platform that turns dream descriptions into beautiful
+							designs in seconds. Ride the wave of creativity.
+						</p>
+						<div class="mt-6 flex space-x-4">
+							<a href={site_config.socials.twitter} target="_blank" rel="noopener noreferrer">
+								<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+									<Twitter class="h-5 w-5" />
+								</Button>
+							</a>
+							<a href={site_config.socials.linkedin} target="_blank" rel="noopener noreferrer">
+								<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+									<Linkedin class="h-5 w-5" />
+								</Button>
+							</a>
+							<a href={site_config.socials.github} target="_blank" rel="noopener noreferrer">
+								<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+									<Github class="h-5 w-5" />
+								</Button>
+							</a>
+							<a href={site_config.socials.instagram} target="_blank" rel="noopener noreferrer">
+								<Button variant="ghost" size="icon" class="ripple-btn rounded-full">
+									<Instagram class="h-5 w-5" />
+								</Button>
+							</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="mb-4 text-lg font-semibold">Dream Team</h3>
+						<ul class="space-y-2">
+							<li>
+								<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Our Story</a
+								>
+							</li>
+							<li>
+								<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Join Us</a
+								>
+							</li>
+							<li>
+								<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Wave Journal</a
+								>
+							</li>
+							<li>
+								<a
+									href={`mailto:${site_config.contact.email}`}
+									class="text-muted-foreground transition-colors hover:text-blue-500">Connect</a
+								>
+							</li>
+						</ul>
+					</div>
+
+					<div>
+						<h3 class="mb-4 text-lg font-semibold">Surf Guide</h3>
+						<ul class="space-y-2">
+							<li>
+								<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Wave Manual</a
+								>
+							</li>
+							<li>
+								<a
+									href={`mailto:${site_config.contact.support}`}
+									class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Wave Support</a
+								>
+							</li>
+							<li>
+								<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Surf Lessons</a
+								>
+							</li>
+							<li>
+								<a href="/" class="text-muted-foreground transition-colors hover:text-blue-500"
+									>Surf Community</a
+								>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+				<Separator class="my-8" />
+
+				<div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+					<p class="text-sm text-muted-foreground">
+						© {new Date().getFullYear()}
+						Dreamsurf. All waves reserved.
 					</p>
-				</div>
-
-				<div class="flex flex-wrap justify-center gap-4">
-					{#each site_config.design_types as designType}
-						<div class="rounded-full bg-background/80 px-6 py-3 shadow backdrop-blur-sm">
-							<span class="font-medium">{designType}</span>
-						</div>
-					{/each}
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<!-- Testimonials -->
-	<section id="testimonials" class="relative z-10 py-24">
-		<div class="container mx-auto px-4">
-			<div class="mb-16 text-center">
-				<div
-					class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-				>
-					Testimonials
-				</div>
-				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-					Loved by <span class="text-gradient">Creators Worldwide</span>
-				</h2>
-				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
-					See what designers, marketers, and entrepreneurs are saying about {site_config.site_name}.
-				</p>
-			</div>
-
-			<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-				<Card.Root class="card-hover relative overflow-hidden border-0 p-8 shadow-lg">
-					<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/5"></div>
-					<div class="absolute -bottom-5 -left-5 h-40 w-40 rounded-full bg-secondary/5"></div>
-					<Card.Content>
-						<div class="flex">
-							{#each Array(5) as _}
-								<Star class="h-5 w-5 fill-primary text-primary" />
-							{/each}
-						</div>
-						<p class="my-6 text-xl font-medium italic">
-							"{site_config.site_name} has revolutionized my workflow. What used to take hours in design
-							software now takes minutes with a simple text prompt. It's like having a design team at
-							my fingertips."
-						</p>
-						<div class="flex items-center gap-4">
-							<div
-								class="h-14 w-14 overflow-hidden rounded-full bg-gradient-to-r from-primary to-secondary"
-							></div>
-							<div>
-								<p class="text-lg font-semibold">Sarah Johnson</p>
-								<p class="text-muted-foreground">Marketing Director, Creativa</p>
-							</div>
-						</div>
-					</Card.Content>
-				</Card.Root>
-
-				<Card.Root class="card-hover relative overflow-hidden border-0 p-8 shadow-lg">
-					<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-secondary/5"></div>
-					<div class="absolute -bottom-5 -left-5 h-40 w-40 rounded-full bg-accent/5"></div>
-					<Card.Content>
-						<div class="flex">
-							{#each Array(5) as _}
-								<Star class="h-5 w-5 fill-primary text-primary" />
-							{/each}
-						</div>
-						<p class="my-6 text-xl font-medium italic">
-							"As a non-designer running a startup, {site_config.site_name} has been a game-changer.
-							I can create professional marketing materials without hiring a design agency. The ROI is
-							incredible."
-						</p>
-						<div class="flex items-center gap-4">
-							<div
-								class="h-14 w-14 overflow-hidden rounded-full bg-gradient-to-r from-secondary to-accent"
-							></div>
-							<div>
-								<p class="text-lg font-semibold">Mark Williams</p>
-								<p class="text-muted-foreground">Founder, LaunchPad</p>
-							</div>
-						</div>
-					</Card.Content>
-				</Card.Root>
-			</div>
-		</div>
-	</section>
-
-	<!-- Pricing -->
-	<section id="pricing" class="relative z-10 py-24">
-		<div class="container mx-auto px-4">
-			<div class="mb-16 text-center">
-				<div
-					class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-				>
-					Pricing
-				</div>
-				<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-					Simple, <span class="text-gradient">Transparent Pricing</span>
-				</h2>
-				<p class="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
-					Choose the plan that fits your creative needs, from individual creators to design teams.
-				</p>
-			</div>
-
-			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-				<Card.Root class="card-hover relative border-0 p-8 shadow-lg">
-					<Card.Header>
-						<Card.Title class="text-2xl">Creator</Card.Title>
-						<Card.Description class="text-base">
-							Perfect for individual creators and small projects
-						</Card.Description>
-					</Card.Header>
-					<Card.Content>
-						<div class="mb-8 mt-6">
-							<span class="text-5xl font-bold">$19</span>
-							<span class="text-muted-foreground">/month</span>
-							<p class="mt-2 text-sm text-muted-foreground">Billed annually</p>
-						</div>
-						<ul class="space-y-4 text-base">
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>50 designs per month</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Basic customization tools</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Standard export formats</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Email support</span>
-							</li>
-						</ul>
-					</Card.Content>
-					<Card.Footer>
-						<Button variant="outline" class="w-full text-base">Get Started</Button>
-					</Card.Footer>
-				</Card.Root>
-
-				<Card.Root class="card-hover relative border-0 p-8 shadow-xl">
-					<div
-						class="absolute -top-3 left-0 right-0 mx-auto w-fit rounded-full bg-primary px-4 py-1 text-center text-sm font-medium text-primary-foreground"
-					>
-						Most Popular
-					</div>
-					<div class="hero-gradient absolute inset-0 -z-10 opacity-5"></div>
-					<Card.Header>
-						<Card.Title class="text-2xl">Professional</Card.Title>
-						<Card.Description class="text-base">Ideal for businesses and teams</Card.Description>
-					</Card.Header>
-					<Card.Content>
-						<div class="mb-8 mt-6">
-							<span class="text-5xl font-bold">$49</span>
-							<span class="text-muted-foreground">/month</span>
-							<p class="mt-2 text-sm text-muted-foreground">Billed annually</p>
-						</div>
-						<ul class="space-y-4 text-base">
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Unlimited designs</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Advanced editing tools</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Brand kit integration</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Priority support</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Team collaboration</span>
-							</li>
-						</ul>
-					</Card.Content>
-					<Card.Footer>
-						<Button class="w-full text-base">Get Started</Button>
-					</Card.Footer>
-				</Card.Root>
-
-				<Card.Root class="card-hover relative border-0 p-8 shadow-lg">
-					<Card.Header>
-						<Card.Title class="text-2xl">Enterprise</Card.Title>
-						<Card.Description class="text-base">
-							For organizations with advanced design needs
-						</Card.Description>
-					</Card.Header>
-					<Card.Content>
-						<div class="mb-8 mt-6">
-							<span class="text-5xl font-bold">$149</span>
-							<span class="text-muted-foreground">/month</span>
-							<p class="mt-2 text-sm text-muted-foreground">Billed annually</p>
-						</div>
-						<ul class="space-y-4 text-base">
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Unlimited everything</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Custom AI model training</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>API access</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>Dedicated account manager</span>
-							</li>
-							<li class="flex items-center gap-3">
-								<CheckCircle class="h-5 w-5 text-primary" />
-								<span>SSO & advanced security</span>
-							</li>
-						</ul>
-					</Card.Content>
-					<Card.Footer>
-						<Button variant="outline" class="w-full text-base">Contact Sales</Button>
-					</Card.Footer>
-				</Card.Root>
-			</div>
-		</div>
-	</section>
-
-	<!-- CTA Section -->
-	<section id="contact" class="relative z-10 py-20">
-		<div class="container mx-auto px-4">
-			<div class="overflow-hidden rounded-3xl bg-primary shadow-2xl">
-				<div class="hero-gradient p-12 md:p-16">
-					<div class="mx-auto max-w-3xl text-center text-white">
-						<h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-							Ready to transform your creative process?
-						</h2>
-						<p class="mx-auto mt-4 max-w-2xl text-xl opacity-90">
-							Join thousands of creators already using {site_config.site_name} to bring their ideas to
-							life.
-						</p>
-						<div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-							<Button variant="secondary" size="lg" class="text-lg">
-								Start Creating Free
-								<ArrowRight class="ml-2 h-5 w-5" />
-							</Button>
-							<Button
-								variant="outline"
-								size="lg"
-								class="border-white bg-transparent text-lg text-white hover:bg-white/20"
-							>
-								Watch Demo
-							</Button>
-						</div>
-
-						<div class="mt-12 flex flex-wrap items-center justify-center gap-8">
-							<p class="flex items-center gap-2 text-base">
-								<CheckCircle class="h-5 w-5" />
-								<span>No credit card required</span>
-							</p>
-							<p class="flex items-center gap-2 text-base">
-								<CheckCircle class="h-5 w-5" />
-								<span>5 free designs</span>
-							</p>
-							<p class="flex items-center gap-2 text-base">
-								<CheckCircle class="h-5 w-5" />
-								<span>Cancel anytime</span>
-							</p>
-						</div>
+					<div class="flex gap-6">
+						<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-blue-500"
+							>Privacy Policy</a
+						>
+						<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-blue-500"
+							>Terms of Service</a
+						>
+						<a href="/" class="text-sm text-muted-foreground transition-colors hover:text-blue-500"
+							>Cookie Policy</a
+						>
 					</div>
 				</div>
 			</div>
-		</div>
-	</section>
-
-	<!-- Footer -->
-	<footer class="relative z-10 pb-12 pt-24">
-		<div class="container mx-auto px-4">
-			<div class="grid grid-cols-1 gap-8 md:grid-cols-5">
-				<div class="md:col-span-2">
-					<div class="flex items-center gap-2">
-						<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-							<Palette class="h-6 w-6 text-primary-foreground" />
-						</div>
-						<span class="text-xl font-bold">{site_config.site_name}</span>
-					</div>
-					<p class="mt-4 max-w-md text-muted-foreground">
-						{site_config.site_description} The AI-powered platform that turns text descriptions into
-						beautiful designs in seconds.
-					</p>
-					<div class="mt-6 flex space-x-4">
-						<a href={site_config.socials.twitter} target="_blank" rel="noopener noreferrer">
-							<Button variant="ghost" size="icon" class="rounded-full">
-								<Twitter class="h-5 w-5" />
-							</Button>
-						</a>
-						<a href={site_config.socials.linkedin} target="_blank" rel="noopener noreferrer">
-							<Button variant="ghost" size="icon" class="rounded-full">
-								<Linkedin class="h-5 w-5" />
-							</Button>
-						</a>
-						<a href={site_config.socials.github} target="_blank" rel="noopener noreferrer">
-							<Button variant="ghost" size="icon" class="rounded-full">
-								<Github class="h-5 w-5" />
-							</Button>
-						</a>
-						<a href={site_config.socials.instagram} target="_blank" rel="noopener noreferrer">
-							<Button variant="ghost" size="icon" class="rounded-full">
-								<Instagram class="h-5 w-5" />
-							</Button>
-						</a>
-					</div>
-				</div>
-
-				<div>
-					<h3 class="mb-4 text-lg font-semibold">Product</h3>
-					<ul class="space-y-2">
-						<li>
-							<a href="#features" class="text-muted-foreground hover:text-primary">Features</a>
-						</li>
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Use Cases</a></li>
-						<li><a href="#pricing" class="text-muted-foreground hover:text-primary">Pricing</a></li>
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Gallery</a></li>
-					</ul>
-				</div>
-
-				<div>
-					<h3 class="mb-4 text-lg font-semibold">Company</h3>
-					<ul class="space-y-2">
-						<li><a href="/" class="text-muted-foreground hover:text-primary">About</a></li>
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Careers</a></li>
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Blog</a></li>
-						<li>
-							<a
-								href={`mailto:${site_config.contact.email}`}
-								class="text-muted-foreground hover:text-primary">Contact</a
-							>
-						</li>
-					</ul>
-				</div>
-
-				<div>
-					<h3 class="mb-4 text-lg font-semibold">Resources</h3>
-					<ul class="space-y-2">
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Documentation</a></li>
-						<li>
-							<a
-								href={`mailto:${site_config.contact.support}`}
-								class="text-muted-foreground hover:text-primary">Help Center</a
-							>
-						</li>
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Tutorials</a></li>
-						<li><a href="/" class="text-muted-foreground hover:text-primary">Community</a></li>
-					</ul>
-				</div>
-			</div>
-
-			<Separator class="my-8" />
-
-			<div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-				<p class="text-sm text-muted-foreground">
-					© {new Date().getFullYear()}
-					{site_config.site_name}. All rights reserved.
-				</p>
-				<div class="flex gap-6">
-					<a href="/" class="text-sm text-muted-foreground hover:text-primary">Privacy Policy</a>
-					<a href="/" class="text-sm text-muted-foreground hover:text-primary">Terms of Service</a>
-					<a href="/" class="text-sm text-muted-foreground hover:text-primary">Cookie Policy</a>
-				</div>
-			</div>
-		</div>
-	</footer>
+		</footer>
+	</div>
 </div>
+
+<style>
+	/* Ocean gradient */
+	.ocean-gradient {
+		background: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+	}
+
+	/* Wave animations */
+	.wave-container {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	.wave {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 200%;
+		height: 100px;
+		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' opacity='.25' fill='%233b82f6'/%3E%3Cpath d='M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z' opacity='.5' fill='%232dd4bf'/%3E%3Cpath d='M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z' opacity='.25' fill='%2322d3ee'/%3E%3C/svg%3E")
+			repeat-x;
+		background-size: 1200px 100px;
+		animation: wave 25s linear infinite;
+	}
+
+	.wave1 {
+		animation-delay: 0s;
+		z-index: 1;
+		opacity: 0.3;
+	}
+
+	.wave2 {
+		animation-delay: -5s;
+		z-index: 2;
+		opacity: 0.2;
+		bottom: 10px;
+	}
+
+	.wave3 {
+		animation-delay: -10s;
+		z-index: 3;
+		opacity: 0.1;
+		bottom: 20px;
+	}
+
+	@keyframes wave {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-50%);
+		}
+	}
+
+	/* Dream cloud animations */
+	.dream-cloud {
+		position: absolute;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 50%;
+		filter: blur(20px);
+		animation: float 20s ease-in-out infinite;
+	}
+
+	.cloud1 {
+		width: 150px;
+		height: 60px;
+		top: 15%;
+		left: 10%;
+		opacity: 0.3;
+	}
+
+	.cloud2 {
+		width: 100px;
+		height: 40px;
+		top: 35%;
+		right: 15%;
+		animation-delay: 5s;
+		opacity: 0.2;
+	}
+
+	.cloud3 {
+		width: 120px;
+		height: 50px;
+		bottom: 25%;
+		left: 20%;
+		animation-delay: 10s;
+		opacity: 0.25;
+	}
+
+	@keyframes float {
+		0% {
+			transform: translateY(0) translateX(0);
+		}
+		50% {
+			transform: translateY(-20px) translateX(20px);
+		}
+		100% {
+			transform: translateY(0) translateX(0);
+		}
+	}
+
+	/* Drift animation for background elements */
+	.animate-drift {
+		animation: drift 20s ease-in-out infinite alternate;
+	}
+
+	@keyframes drift {
+		0% {
+			transform: translate(0, 0);
+		}
+		100% {
+			transform: translate(50px, 20px);
+		}
+	}
+
+	/* Ripple button effect */
+	.ripple-btn {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.ripple-btn::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 5px;
+		height: 5px;
+		background: rgba(59, 130, 246, 0.3);
+		opacity: 0;
+		border-radius: 100%;
+		transform: scale(1, 1) translate(-50%, -50%);
+		transform-origin: 50% 50%;
+	}
+
+	.ripple-btn:hover::after {
+		animation: ripple 1s ease-out;
+	}
+
+	@keyframes ripple {
+		0% {
+			transform: scale(0, 0);
+			opacity: 0.5;
+		}
+		20% {
+			transform: scale(25, 25);
+			opacity: 0.3;
+		}
+		100% {
+			opacity: 0;
+			transform: scale(40, 40);
+		}
+	}
+
+	/* Surfboard button effect */
+	.surfboard-btn {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.surfboard-btn::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			rgba(255, 255, 255, 0) 0%,
+			rgba(255, 255, 255, 0.2) 50%,
+			rgba(255, 255, 255, 0) 100%
+		);
+		transition: left 0.5s ease;
+	}
+
+	.surfboard-btn:hover::before {
+		left: 100%;
+	}
+</style>
