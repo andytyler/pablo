@@ -107,8 +107,34 @@ export async function askGPTWithChatHistory<T>(
 	options = {}
 ): Promise<string | T> {
 	try {
-		console.log('*---askGPTWithChatHistory---*');
-		console.log('✨ [OPENAI] chat_history', JSON.stringify(chat_history_messages, null, 2));
+		console.log(
+			'🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪 * --- askGPTWithChatHistory --- *'
+		);
+		// log the first line of every message in the chat history and the role
+		chat_history_messages.forEach((message) => {
+			// for each actual message content, log the first line
+			message.content.forEach((content: OpenAI.ChatCompletionMessageParam) => {
+				if (typeof content.content === 'string') {
+					console.log(
+						`✨ [${message.style.toUpperCase()}] [${content.role}]  ${content.content.slice(0, 100)}`
+					);
+				} else {
+					content.content?.forEach((item) => {
+						if (item.type === 'text') {
+							console.log(`✨ [${message.style.toUpperCase()}] [${content.role}]  ${item.text}`);
+						} else if (item.type === 'image_url') {
+							console.log(
+								`✨ [${message.style.toUpperCase()}] [${content.role}]  ${item.image_url.url}`
+							);
+						} else {
+							console.log(
+								`✨ [${message.style.toUpperCase()}] [${content.role}]  ${JSON.stringify(item)}`
+							);
+						}
+					});
+				}
+			});
+		});
 
 		let messages_array = chat_history_messages.flatMap((message) => message.content);
 

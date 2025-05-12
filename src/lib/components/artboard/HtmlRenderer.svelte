@@ -3,6 +3,7 @@
 	import { artboardStore } from '$lib/stores/artboard-store.svelte'; // artboardHTMLStore is no longer primary here
 	import { onDestroy, onMount } from 'svelte';
 	import EditbleWrapper from './EditbleWrapper.svelte';
+	import WaveAnimation from './WaveAnimation.svelte';
 	// Import the new wrapper
 
 	// Use $props() for Svelte 5 with proper typing
@@ -97,11 +98,13 @@
 		onclick={handleArtboardBackgroundClick}
 	>
 		{#if artboardStore.isLoading}
-			<div class="text-center text-muted-foreground">Loading...</div>
+			<WaveAnimation borderWidth={18} animationSpeed={3} variant="loading" />
+			<div class="z-10 text-center text-muted-foreground">Loading...</div>
 		{:else if artboardStore.isWaiting}
-			<div class="text-center text-muted-foreground">Waiting...</div>
+			<WaveAnimation borderWidth={20} animationSpeed={4} variant="waiting" />
+			<div class="z-10 text-center text-muted-foreground">Waiting...</div>
 		{:else}
-			<div class="text-center text-muted-foreground">
+			<div class="z-10 text-center text-muted-foreground">
 				New Artboard - Start by describing your design!
 			</div>
 		{/if}

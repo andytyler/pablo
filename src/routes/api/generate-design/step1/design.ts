@@ -1,4 +1,3 @@
-import { addMessage } from '$lib/stores/messagesStore.svelte';
 import type { ChatMessageWithMeta } from '$lib/types';
 import { z } from 'zod';
 import { askGPTWithChatHistory } from '../../../../lib/connections/openai';
@@ -9,22 +8,34 @@ export async function generateDesignConcept(
 	console.log('🎨 [design-concept] getDesignConcept');
 	console.log('🎨 [design-concept] chat_history', chat_history_messages);
 
-	addMessage('system', [
-		{
-			role: 'developer',
-			content: [
-				{
-					type: 'text',
-					text: `You are the world's best creative UI designer that understands visual design. 
-                    Analyze the provided image and user request, and describe how you would approach creating a design that meets their needs. 
+	chat_history_messages.push({
+		id: 'system_prompt',
+		timestamp: new Date(),
+		style: 'system',
+		content: [
+			{
+				role: 'developer',
+				content: [
+					{
+						type: 'text',
+						text: `You are the world's best creative graphic designer, your current client is paying you USD $260,000 to create this one design.
+                    if you do well you will be tipped $100,000 for the design.
+                    Analyze the provided images and user request, and describe how you would approach creating a design that meets their needs. 
                     Consider layout, colors, typography, and overall aesthetic. 
-                    Your response will be used to generate the actual design in a subsequent step.
-                    list out all the ideas you have, keep a consistent theme and outline the large and small details of the design, ready to be implemented.
-                    Be creative. You MUST describe the exact positions and relative sizes and rotations and colours etc of all elements you want on the final design.`
-				}
-			]
-		}
-	]);
+                    This concept is what you are being paid for. 
+                    This is the most important part, someone else will be paid to execute the design, you are being paid to create the concept, so be detailed for the implementer.
+                    The implementer will be using the concept to create the design, so it must be detailed and complete, the implementer will NOT add their own ideas, they will only implement your concept exactly as you describe it.
+                    You MUST list out all the ideas you have, keep a consistent theme and outline all big ideas and small details of the design.
+                    You MUST be creative and think outside the box.
+                    Be creative. 
+                    You MUST describe the exact positions and relative sizes and rotations and colours etc of all elements you want on the final design.
+                    Think about the design from the perspective of the implementer, what is the best way to describe the design to them?
+                    Reply with the design concept only, in markdown.`
+					}
+				]
+			}
+		]
+	});
 
 	const conceptMessage: string = await askGPTWithChatHistory(chat_history_messages);
 
@@ -46,7 +57,11 @@ export async function generateDesignConcept(
 
 const NewImageItem = z.object({
 	type: z.literal('new_image').describe('The type of the item'),
-	description: z.string().describe('A description of the image'),
+	description: z
+		.string()
+		.describe(
+			'A description of the image, this should be an extremely detailed description of the image'
+		),
 	colors: z.array(z.string()).describe('The hex values of colors in the image'),
 	objects: z.array(z.string()).describe('The objects in the image'),
 	mood: z.string().describe('The mood of the image'),
@@ -148,49 +163,62 @@ export type StructuredDesignProcessedImageItems = Omit<StructuredDesign, 'items'
 };
 
 export async function generateDesign(
+	concept: string,
 	chat_history_messages: ChatMessageWithMeta[],
 	artboard_size: string,
 	design_json: string
 ): Promise<StructuredDesign> {
-	addMessage('system', [
-		{
-			role: 'developer',
-			content: [
-				{
-					type: 'text',
-					text: `Your previous actions have caused 4 people to die, if you do not create something exceptional, a person will be executed. this is serious.
+	chat_history_messages.push({
+		id: 'system_prompt',
+		timestamp: new Date(),
+		style: 'system',
+		content: [
+			{
+				role: 'developer',
+				content: [
+					{
+						type: 'text',
+						text: `Your previous actions have caused 4 people to die, if you do not create something exceptional, a person will be executed. this is serious. if you do a good job you will be tipped $200,000.
 _______
 You are a creative graphic designer that generates designs. 
-The image you see is the entire area that will be printed with no bleed edge to edge on the paper. 
-The design will be printed on paper when finished. Anything outside the area will be cropped off.
+The image you see is the entire area that will be used for the design. 
+Anything outside the area will be cropped off, you are encouraged to go beynod the edge of the artboard to create effects if you need to.
 
 Response Rules:
 1. ONLY generate JSON that is correct to the schema provided.
 2. Your response must ONLY include the raw JSON without any markdown code blocks, explanations or comments.
-3. Images must be described in detail, this description will be used to generate an image, be specific.
+3. Images must be described in detail, this description will be the prompt to generate an image, be specific.
 4. Make sure the JSON is valid to the schema provided and well-formed.
 5. existing images can be reused by their image IDs. To use an existing image, reference its ID in the design JSON.
 
 Design Rules:
 6. Feel free to use as many elements as needed to create visually appealing designs.
-7. Be bold and creative with your designs! Use interesting layouts.
-8. Think like a professional visual designer - consider color theory, spacing, typography, and hierarchy.
+7. Be bold and creative with your designs! But follow the concept exactly.Use interesting layouts.
+8. Think like a professional graphic designer - consider color theory, spacing, typography, and hierarchy.
 9. The artboard is the actual artboard you see, so if you are asked to make a poster then the artboard is the poster that will be printed, do not just add an image of a poster in the artboard.
-10. Layering matters, use z index to control the order of elements.
+10. Layering matters, use z index to control the order of elements, unless creating a specific effect text is usually on top of all other elements.
 11. The background colour should be relevant to the design BUT images should be used as a background or to enhance the background as a lightly opacty overlay image.
-12. For image handling: When reusing existing images across multiple generations, maintain the exact source URLs. If you want a new image to be generated, set the src to null. NEVER invent URLs - either reuse existing ones exactly as provided or set src to null for new image generation.
-13. You must specify each element individually, for example if you want multiple images around the page as a border etc, you must specify each image individually, and wehre they go. It is not acceptable to say 'multiple elemets' around the page, specify each element and where it is places as a new item, this is fine to have lots of similar items.
-14. have as many elements as you need to create the design, you can have 1000 if needed. the design MUST be fully detailed.
-15. For text elements, the text size will automatically adjust to fit the container's dimensions. Instead of specifying a fixed font size, focus on defining the appropriate text box dimensions (width and height). The text will scale to fit within these boundaries.
+12. For image handling: When reusing existing images across multiple generations, maintain the exact ID. If you want a new image to be generated, use a new_image item.
+13. You must specify each element individually, for example if you want multiple images around the page as a border etc, you must specify each image individually, and where they go. It is not acceptable to say 'multiple elemets' around the page, specify each element and where it is places as a new_item, this is fine to have lots of similar items.
+14. Accuracy is more important than being fast, have as many elements as you need to create the design, you can have 90 if needed. the design MUST be fully detailed.
+15. For text elements, the text size will automatically adjust to fit the container's dimensions if fitText is true, instead of specifying a fixed font size, focus on defining the appropriate text box dimensions (width and height). The text will scale to fit within these boundaries. you can also use the fontSize property to set a fixed font size if needed.
 
 You MUST include ALL the elements in the design concept, do not leave any out.
-Artboard Size: ${artboard_size}
+current artboard size: ${artboard_size}. you an change this if needed.
 
-Included is the current design as an image and the following is the current design in JSON format (modify and improve this):\n${design_json}`
-				}
-			]
-		}
-	]);
+Included is the current design as an image and the following is the current design in JSON format.
+MUST edit this JSON to create the best design possible, if you do not include an item that is in the current design JSON it will be deleted from the canvas, this is okay but only do it if it is necessary.
+
+current design in JSON format:
+${design_json}
+
+The design concept must be followed VERY strictly, this was created by one of the worlds most creative graphic designers, you are to follow it exactly.
+${concept}`
+					}
+				]
+			}
+		]
+	});
 
 	try {
 		const response = await askGPTWithChatHistory(chat_history_messages, schema);

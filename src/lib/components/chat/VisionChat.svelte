@@ -190,9 +190,9 @@
 				body: JSON.stringify({
 					prompt: prompt.trim(),
 					previous_design_json:
-						typeof artboardStore.design_json === 'string'
-							? artboardStore.design_json
-							: JSON.stringify(artboardStore.design_json || '{}'),
+						typeof artboardStore.image_enriched_design_json === 'string'
+							? artboardStore.image_enriched_design_json
+							: JSON.stringify(artboardStore.image_enriched_design_json || '{}'),
 					artboard_size: `width: ${artboardStore.artboard_width}px, height: ${artboardStore.artboard_height}px`,
 					skip_concept: artboardStore.chatSettings.skip_concept,
 					chat_history_messages: chat_history.messages
@@ -410,13 +410,14 @@
 					bind:value={prompt}
 					{placeholder}
 					id="prompt-textarea"
-					class="resize-vertical h-21 min-h-16 w-full rounded border-2 border-border bg-background p-1 text-sm focus:border-background focus:outline-none focus:ring-2 focus:ring-primary"
+					class="resize-vertical h-21 min-h-16 w-full rounded border-0 border-border bg-background p-1 text-sm focus:border-background focus:outline-none focus:ring-0 focus:ring-primary"
 					disabled={isLoading || isCapturingImage || isGeneratingHTML}
 				/>
 				<div class="relative flex flex-row justify-between gap-1">
 					<Button
 						size="xs"
-						variant="secondary"
+						variant="destructive"
+						class="p-1 px-2"
 						onclick={() => {
 							clearMessages();
 						}}

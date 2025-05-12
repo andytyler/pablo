@@ -43,6 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// STEP TWO: Generate the structured design without processing images
 		const design_json = await generateDesign(
+			concept,
 			chat_history_messages,
 			artboard_size,
 			previous_design_json
