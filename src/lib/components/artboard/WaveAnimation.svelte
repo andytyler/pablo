@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Component for wave animation around container edges
 	let {
-		borderWidth = 15,
+		borderWidth = 5,
 		animationSpeed = 4,
 		variant = 'default',
 		glowIntensity = 10
@@ -24,11 +24,12 @@
 	);
 </script>
 
-<div class="wave-container">
+<div class="wave-container z-[101] scale-110 transform opacity-60 blur-sm">
 	<div
-		class="wave-border {colorClass}"
+		class="wave-effect {colorClass} "
 		style="--border-width: {borderWidth}px; --animation-speed: {animationSpeed}s; --glow-intensity: {glowIntensity}px;"
 	></div>
+	<div class="content-container"></div>
 </div>
 
 <style>
@@ -39,32 +40,27 @@
 		width: 100%;
 		height: 100%;
 		pointer-events: none;
+		z-index: 100;
+		overflow: hidden;
+	}
+
+	.content-container {
+		position: absolute;
+		top: var(--border-width, 15px);
+		left: var(--border-width, 15px);
+		right: var(--border-width, 15px);
+		bottom: var(--border-width, 15px);
 		z-index: 1;
 	}
 
-	.wave-border {
+	.wave-effect {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		border: var(--border-width, 15px) solid transparent;
-		background-clip: padding-box;
+		z-index: 0;
 		box-shadow: inset 0 0 var(--glow-intensity, 10px) rgba(255, 255, 255, 0.4);
-	}
-
-	.wave-border::before {
-		content: '';
-		position: absolute;
-		inset: calc(-1 * var(--border-width, 15px));
-		mask:
-			linear-gradient(#fff 0 0) content-box,
-			linear-gradient(#fff 0 0);
-		mask-composite: exclude;
-		-webkit-mask:
-			linear-gradient(#fff 0 0) content-box,
-			linear-gradient(#fff 0 0);
-		-webkit-mask-composite: xor;
 		animation:
 			rotate-hue 8s linear infinite,
 			wave-flow var(--animation-speed, 4s) ease-in-out infinite alternate;
@@ -72,17 +68,8 @@
 		filter: brightness(1.2) saturate(1.5);
 	}
 
-	.wave-border::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border: calc(var(--border-width, 15px) * 0.7) solid transparent;
-		background-clip: padding-box;
-		animation: pulse 3s ease-in-out infinite;
-	}
-
 	/* Color variants */
-	.default-colors::before {
+	.default-colors {
 		background: conic-gradient(
 			from 0deg at 50% 50%,
 			#ff3d00,
@@ -95,7 +82,7 @@
 		box-shadow: 0 0 calc(var(--glow-intensity, 10px) * 2) rgba(255, 61, 0, 0.6);
 	}
 
-	.loading-colors::before {
+	.loading-colors {
 		background: conic-gradient(
 			from 0deg at 50% 50%,
 			#ff3d00,
@@ -108,7 +95,7 @@
 		box-shadow: 0 0 calc(var(--glow-intensity, 10px) * 2) rgba(255, 158, 0, 0.6);
 	}
 
-	.waiting-colors::before {
+	.waiting-colors {
 		background: conic-gradient(
 			from 0deg at 50% 50%,
 			#7c4dff,
@@ -120,7 +107,7 @@
 		box-shadow: 0 0 calc(var(--glow-intensity, 10px) * 2) rgba(33, 150, 243, 0.6);
 	}
 
-	.empty-colors::before {
+	.empty-colors {
 		background: conic-gradient(
 			from 0deg at 50% 50%,
 			#ff3d9e,

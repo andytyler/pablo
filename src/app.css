@@ -1,6 +1,8 @@
-@tailwind base;
+@import "tailwindcss";
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
+
 
 @layer base {
   :root {
@@ -65,14 +67,7 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+
 
 @layer utilities {
   .hero-gradient {

@@ -1,10 +1,10 @@
 <script lang="ts">
+	import PasteImage from '$lib/components/common/PasteImage.svelte';
 	import ArtboardAssets from '$lib/components/generated-assets/ArtboardAssets.svelte';
-	import PasteImage from '$lib/components/pasteImage/PasteImage.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { artboardStore } from '$lib/stores/artboard-store.svelte';
-	import VisionChat from './VisionChat.svelte';
+	import VisionChat from '../html/ChatPane.svelte';
 
 	// Props using Svelte 5 syntax
 	let { canvasSelector = '#design-canvas' } = $props();
@@ -13,18 +13,13 @@
 </script>
 
 <div class="flex w-full flex-col overflow-hidden">
-	<!-- Chat panel -->
 	<Tabs.Root value="assistant" class="">
 		<Tabs.List class="flex w-full flex-row gap-2 bg-card p-1">
 			<Tabs.Trigger class="" value="setup">Artboard Info</Tabs.Trigger>
 			<Tabs.Trigger class="" value="assistant">AI Assistant</Tabs.Trigger>
 			<Tabs.Trigger class="" value="images">Images</Tabs.Trigger>
-			<Tabs.Trigger class="" value="assets">Assets</Tabs.Trigger>
 		</Tabs.List>
 
-		<Tabs.Content value="setup" class="h-full">
-			<ArtboardAssets />
-		</Tabs.Content>
 		<Tabs.Content value="setup" class="h-full">
 			<div class="flex-1 overflow-hidden">
 				<h2 class="mb-2 text-sm font-medium">Artboard Information</h2>

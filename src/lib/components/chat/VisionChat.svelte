@@ -29,7 +29,7 @@
 		initMessages
 	} from '$lib/stores/messagesStore.svelte';
 	import type { Design, DesignElement } from '$lib/types';
-	import ChatMessage from './ChatMessage.svelte';
+	import ChatMessage from '../common/ChatMessage.svelte';
 
 	// State using Svelte 5 runes
 	let prompt = $state('');

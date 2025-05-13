@@ -12,7 +12,7 @@
 	import ZoomOut from '@lucide/svelte/icons/zoom-out';
 	import { Trash } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import HtmlRenderer from './HtmlRenderer.svelte';
+	import HtmlRenderer from './HtmlRendererOld.svelte';
 
 	// Use state from the store
 	let zoom = $derived(artboardStore.viewSettings.zoom);
