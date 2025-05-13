@@ -1,8 +1,82 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 /* @tailwind base;
 @tailwind components;
 @tailwind utilities; */
 
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility hero-gradient {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.9) 0%,
+    hsl(var(--secondary) / 0.9) 50%,
+    hsl(var(--accent) / 0.9) 100%
+  );
+}
+
+@utility text-gradient {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--accent)) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+@utility card-hover {
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow:
+      0 20px 25px -5px rgb(0 0 0 / 0.1),
+      0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+}
+
+@utility blob-animation {
+  animation: blob-pulse 10s infinite;
+}
+
+@utility epic-title-first {
+  /* Epic title animations */
+  animation:
+    float-slow 6s ease-in-out infinite,
+    glow 3s ease-in-out infinite alternate;
+}
+
+@utility epic-title-second {
+  animation:
+    float-fast 8s ease-in-out infinite,
+    glow-intense 4s ease-in-out infinite alternate;
+}
+
+@utility title-glow {
+  animation: pulse-glow 8s ease-in-out infinite;
+}
+
+@utility wave-animation {
+  animation: wave 10s ease-in-out infinite;
+}
 
 @layer base {
   :root {
@@ -70,39 +144,6 @@
 
 
 @layer utilities {
-  .hero-gradient {
-    background: linear-gradient(
-      135deg, 
-      hsl(var(--primary) / 0.9) 0%, 
-      hsl(var(--secondary) / 0.9) 50%, 
-      hsl(var(--accent) / 0.9) 100%
-    );
-  }
-
-  .text-gradient {
-    background: linear-gradient(
-      90deg, 
-      hsl(var(--primary)) 0%, 
-      hsl(var(--accent)) 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
-  }
-
-  .card-hover {
-    transition: all 0.3s ease;
-  }
-
-  .card-hover:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  }
-
-  .blob-animation {
-    animation: blob-pulse 10s infinite;
-  }
 
   @keyframes blob-pulse {
     0% {
@@ -114,19 +155,6 @@
     100% {
       border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
     }
-  }
-
-  /* Epic title animations */
-  .epic-title-first {
-    animation: float-slow 6s ease-in-out infinite, glow 3s ease-in-out infinite alternate;
-  }
-  
-  .epic-title-second {
-    animation: float-fast 8s ease-in-out infinite, glow-intense 4s ease-in-out infinite alternate;
-  }
-  
-  .title-glow {
-    animation: pulse-glow 8s ease-in-out infinite;
   }
   
   @keyframes float-slow {
@@ -157,10 +185,6 @@
       opacity: 0.5;
       transform: scale(1.1);
     }
-  }
-
-  .wave-animation {
-    animation: wave 10s ease-in-out infinite;
   }
   
   @keyframes wave {
