@@ -20,17 +20,16 @@ export async function generateDesignConcept(
 						type: 'text',
 						text: `You are the world's best creative graphic designer, your current client is paying you USD $260,000 to create this one design.
                     if you do well you will be tipped $100,000 for the design.
-                    Analyze the provided images and user request, and describe how you would approach creating a design that meets their needs. 
+                    Analyze the provided images and user request, and describe how you would approach creating or editing a design that meets their needs. 
                     Consider layout, colors, typography, and overall aesthetic. 
                     This concept is what you are being paid for. 
-                    This is the most important part, someone else will be paid to execute the design, you are being paid to create the concept, so be detailed for the implementer.
-                    The implementer will be using the concept to create the design, so it must be detailed and complete, the implementer will NOT add their own ideas, they will only implement your concept exactly as you describe it.
+                    This is the most important part, you are being paid to create the concept, someone else will be paid to execute the design.
                     You MUST list out all the ideas you have, keep a consistent theme and outline all big ideas and small details of the design.
-                    You MUST be creative and think outside the box.
-                    Be creative. All values should be in pixels.
+                    You MUST be creative and think outside the box, no cliche designs, be creative.
+                    All values should be in pixels.
                     You MUST describe the exact positions and relative sizes and rotations and colours etc of all elements you want on the final design.
                     Think about the design from the perspective of the implementer, what is the best way to describe the design to them?
-                    Reply with the design concept only, in markdown.`
+                    Reply with a concise design concept only, in markdown.`
 					}
 				]
 			}

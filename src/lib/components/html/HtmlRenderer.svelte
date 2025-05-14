@@ -4,6 +4,25 @@
 	import { frameStore } from '$lib/stores/frame-store.svelte';
 	import WaveAnimation from '../artboard/WaveAnimation.svelte';
 
+	// Function to extract dimensions from HTML
+	function extractDimensions(htmlString: string): { width?: number; height?: number } {
+		if (!browser || !htmlString) return {};
+
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(htmlString, 'text/html');
+		const meta_tag = doc.getElementsByTagName('meta');
+
+		if (meta_tag.length > 0) {
+			const height = meta_tag[0].getAttribute('data-height');
+			const width = meta_tag[0].getAttribute('data-width');
+			return {
+				height: height ? parseInt(height) : undefined,
+				width: width ? parseInt(width) : undefined
+			};
+		}
+		return {};
+	}
+
 	// Function to sanitize HTML and remove non-HTML elements
 	function sanitizeHtml(htmlString: string): string {
 		if (!browser || !htmlString) return htmlString;
@@ -32,16 +51,8 @@
 		while (new_imgs.length > 0) {
 			new_imgs[0].parentNode?.removeChild(new_imgs[0]);
 		}
-		// remove all new_image
+		// remove all meta tags
 		const meta_tag = doc.getElementsByTagName('meta');
-		if (meta_tag.length > 0) {
-			const height = meta_tag[0].getAttribute('data-height');
-			const width = meta_tag[0].getAttribute('data-width');
-			if (height && width) {
-				frameStore.frame.height = parseInt(height);
-				frameStore.frame.width = parseInt(width);
-			}
-		}
 		while (meta_tag.length > 0) {
 			meta_tag[0].parentNode?.removeChild(meta_tag[0]);
 		}
@@ -60,32 +71,45 @@
 					attributesToRemove.push(attrName);
 				}
 			}
-
-			// attributesToRemove.forEach((attr) => {
-			// 	element.removeAttribute(attr);
-			// });
-			// element.setAttribute('style', twi(element.getAttribute('class') || ''));
+			// if text made editable
+			if (element.innerHTML !== '' || element.innerHTML !== '') {
+				element.setAttribute('contenteditable', 'true');
+			}
+			element.setAttribute('draggable', 'true');
 		}
 
 		return doc.body.innerHTML;
 	}
 
-	// The design HTML is now directly used for rendering items
-	// let html_to_render: string | null = $state<string | null>(null);
+	let htmlContainer = $state<HTMLDivElement | null>(null);
 
-	let processed: string = '';
+	// Computed value for the processed HTML
+	let processedHtml = $derived(frameStore.html.raw ? sanitizeHtml(frameStore.html.raw) : '');
 
+	// Effect to handle frame dimensions updates
 	$effect(() => {
 		if (frameStore.html.raw) {
-			const sanitizedHtml = sanitizeHtml(frameStore.html.raw);
-			processed = sanitizedHtml;
-			frameStore.html.processed = sanitizedHtml;
-		}
-		if (browser) {
-			const container = document.getElementById('html-content-container');
-			if (container) {
-				container.innerHTML = processed || 'no content';
+			const dimensions = extractDimensions(frameStore.html.raw);
+			if (dimensions.height !== undefined) {
+				frameStore.frame.height = dimensions.height;
 			}
+			if (dimensions.width !== undefined) {
+				frameStore.frame.width = dimensions.width;
+			}
+		}
+	});
+
+	// Update the processed HTML in the store whenever it changes
+	$effect(() => {
+		if (processedHtml) {
+			frameStore.html.processed = processedHtml;
+		}
+	});
+
+	// Effect to update the HTML content
+	$effect(() => {
+		if (htmlContainer && browser) {
+			htmlContainer.innerHTML = processedHtml || 'no content';
 		}
 	});
 </script>
@@ -97,6 +121,7 @@
 		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
 	>
 		<div
+			bind:this={htmlContainer}
 			id="html-content-container"
 			class="relative"
 			style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"

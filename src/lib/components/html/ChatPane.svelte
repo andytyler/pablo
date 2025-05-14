@@ -157,6 +157,10 @@
 			addMessageToFrameStore('assistant', [
 				{ role: 'assistant', content: [{ type: 'text', text: data.design_concept }] }
 			]);
+			// Add messages to chat history
+			addMessageToFrameStore('info', [
+				{ role: 'assistant', content: [{ type: 'text', text: data.design_html }] }
+			]);
 		} catch (err: any) {
 			// Catch any error, including the timeout or screenshot error
 			console.error('Error in handleSubmit:', err);
