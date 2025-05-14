@@ -1,7 +1,7 @@
 import type { ChatMessageWithMeta } from '$lib/types';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { generateDesign, generateDesignConcept } from './design-html';
+import { generateDesignConcept, generateFrameDesign } from './design-html';
 
 export const POST: RequestHandler = async ({ request }) => {
 	console.log('🔍 [generate-design/step1] Received POST request for design structure');
@@ -10,7 +10,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		const {
 			prompt,
 			previous_design_html = '',
-			artboard_size = 'unknown',
+			current_height = 0,
+			current_width = 0,
 			skip_concept = false,
 			chat_history_messages
 		}: {
@@ -18,7 +19,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			skip_concept: boolean;
 			chat_history_messages: ChatMessageWithMeta[];
 			previous_design_html: string;
-			artboard_size: string;
+			current_height: number;
+			current_width: number;
 		} = await request.json();
 
 		if (!prompt) {
@@ -34,15 +36,19 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (!skip_concept) {
 			concept = await generateDesignConcept(chat_history_messages);
 		}
+		console.log('CONCEPT LENGTH', concept.length);
 
 		console.log('@TWO', chat_history_messages.length);
 		// STEP TWO: Generate the structured design without processing images
-		const design_html = await generateDesign(
+		const design_html = await generateFrameDesign(
 			concept,
 			chat_history_messages,
-			artboard_size,
+			current_height,
+			current_width,
 			previous_design_html
 		);
+		console.log('FRAME DESIGN HTML LENGTH', design_html.length);
+
 		console.log('@THREE', chat_history_messages.length);
 
 		// Validate that the design_json has the expected structure

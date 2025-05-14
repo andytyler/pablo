@@ -1,7 +1,9 @@
 import { browser } from '$app/environment';
 import type { ChatMessageWithMeta } from '$lib/types';
 
-export const frame_chat_messages = $state<{ messages: ChatMessageWithMeta[] }>({ messages: [] });
+export const frame_chat_messages = $state<{ messages: ChatMessageWithMeta[] }>(
+	initMessagesFromFrameStore()
+);
 
 // Helper functions
 function generateId() {
@@ -19,8 +21,16 @@ export function addMessageToFrameStore(
 		content
 	};
 	frame_chat_messages.messages = [...frame_chat_messages.messages, message];
+	persistFrameMessageStore();
 	return message;
 }
+
+export function persistFrameMessageStore() {
+	if (browser) {
+		localStorage.setItem('frame_chat_messages', JSON.stringify(frame_chat_messages));
+	}
+}
+
 export function removeMessageFromFrameStore(id: string) {
 	frame_chat_messages.messages = frame_chat_messages.messages.filter(
 		(message) => message.id !== id
@@ -34,7 +44,7 @@ export function clearMessagesFromFrameStore() {
 	frame_chat_messages.messages = [];
 }
 
-export function initMessagesFromFrameStore() {
+export function initMessagesFromFrameStore(): { messages: ChatMessageWithMeta[] } {
 	// Initialize messages from localStorage if available
 	if (browser) {
 		const storedMessages = localStorage.getItem('frame_chat_messages');
@@ -47,10 +57,12 @@ export function initMessagesFromFrameStore() {
 						msg.timestamp = new Date(msg.timestamp);
 					}
 				});
-				frame_chat_messages.messages = parsedMessages.messages;
+				return parsedMessages;
 			} catch (error) {
 				console.error('Failed to parse stored frame chat history:', error);
+				return { messages: [] };
 			}
 		}
 	}
+	return { messages: [] };
 }

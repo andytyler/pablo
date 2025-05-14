@@ -22,9 +22,9 @@
 	}
 </script>
 
-<div class="flex w-full flex-col overflow-hidden">
-	<Tabs.Root value="assistant" class="">
-		<Tabs.List class="flex w-full flex-row gap-2 bg-card p-1">
+<div class="flex h-full w-full flex-col overflow-hidden">
+	<Tabs.Root value="assistant" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<Tabs.List class="flex w-full flex-shrink-0 flex-row gap-2 bg-card p-1">
 			<Tabs.Trigger class="" value="setup">Artboard Info</Tabs.Trigger>
 			<Tabs.Trigger class="" value="assistant">AI Assistant</Tabs.Trigger>
 			<Tabs.Trigger class="" value="images">Images</Tabs.Trigger>
@@ -101,17 +101,8 @@
 			</div>
 		</Tabs.Content>
 
-		<Tabs.Content value="assistant" class="mt-0 h-full">
-			<div class="flex-1 overflow-hidden">
-				<div class=" bg-muted/50 p-2">
-					<h3 class="text-lg font-semibold">Design Assistant</h3>
-					<p class="text-sm text-muted-foreground">
-						Ask questions, get feedback, or generate HTML designs with AI
-					</p>
-				</div>
-
-				<Separator />
-
+		<Tabs.Content value="assistant" class="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+			<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
 				<ChatPane />
 			</div>
 		</Tabs.Content>

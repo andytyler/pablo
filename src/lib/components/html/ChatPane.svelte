@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { Button } from '$lib/components/ui/button';
-	import * as ScrollArea from '$lib/components/ui/scroll-area';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { captureCanvasScreenshot } from '$lib/connections/screenshot';
@@ -73,166 +73,75 @@
 		}
 	});
 
-	// // Function to generate design using the two-step approach with separate endpoints
-	// async function executeDesignPipeline() {
-	// 	if (!user_input.trim()) {
-	// 		console.error('No prompt provided');
-	// 		addMessageToFrameStore('user', [
-	// 			{
-	// 				role: 'user',
-	// 				content: [{ type: 'text', text: 'No prompt provided' }]
-	// 			}
-	// 		]);
-	// 		return;
-	// 	}
-
-	// 	try {
-	// 		// Capture the current design state as a screenshot
-	// 		const { url: canvasScreenshotUrl, error } = await captureCanvasScreenshot(CANVAS_SELECTOR);
-
-	// 		if (error || !canvasScreenshotUrl) {
-	// 			throw new Error(error?.message || 'Failed to capture canvas screenshot');
-	// 		}
-
-	// 		addMessageToFrameStore('image', [
-	// 			{
-	// 				role: 'user',
-	// 				content: [{ type: 'image_url', image_url: { url: canvasScreenshotUrl, detail: 'high' } }]
-	// 			}
-	// 		]);
-
-	// 		addMessageToFrameStore('user', [
-	// 			{ role: 'user', content: [{ type: 'text', text: user_input }] }
-	// 		]);
-
-	// 		// Set initial loading state
-	// 		frameStore.isLoading = true;
-	// 		user_input = '';
-	// 		// Step 1: Get design JSON with image placeholders
-	// 		addMessageToFrameStore('info', [
-	// 			{
-	// 				role: 'assistant',
-	// 				content: [{ type: 'text', text: 'Step 1: Generating design structure...' }]
-	// 			}
-	// 		]);
-
-	// 		const designResponse = await fetch('/api/generate-design/step1', {
-	// 			method: 'POST',
-	// 			headers: {
-	// 				'Content-Type': 'application/json'
-	// 			},
-	// 			body: JSON.stringify({
-	// 				prompt: user_input.trim(),
-	// 				previous_design_html:
-	// 					typeof frameStore.html.processed === 'string'
-	// 						? frameStore.html.processed
-	// 						: JSON.stringify(frameStore.html.processed || '{}'),
-	// 				artboard_size: `width: ${frameStore.frame.width}px, height: ${frameStore.frame.height}px`,
-	// 				skip_concept: frameStore.chat_settings.skip_concept,
-	// 				chat_history_messages: frame_chat_messages.messages
-	// 			})
-	// 		});
-
-	// 		if (!designResponse.ok) {
-	// 			const errorData = await designResponse.json();
-	// 			console.error('Failed to generate design structure:', errorData);
-	// 			throw new Error(errorData.error || 'Failed to generate design structure');
-	// 		}
-
-	// 		let step_one_response: {
-	// 			design_html: string;
-	// 			design_generation_id: string;
-	// 			step_one_concept: string;
-	// 		} = await designResponse.json();
-	// 		console.log('step1Response', step_one_response);
-
-	// 		// Add defensive checking for required properties
-	// 		if (!step_one_response || !step_one_response.design_html) {
-	// 			throw new Error('Invalid response structure: design_html is missing');
-	// 		}
-
-	// 		frameStore.html.processed = step_one_response.design_html;
-
-	// 		if (step_one_response.step_one_concept) {
-	// 			addMessageToFrameStore('assistant', [
-	// 				{
-	// 					role: 'assistant',
-	// 					content: [{ type: 'text', text: step_one_response.step_one_concept }]
-	// 				}
-	// 			]);
-	// 		}
-
-	// 		addMessageToFrameStore('info', [
-	// 			{
-	// 				role: 'user',
-	// 				content: [{ type: 'text', text: 'Design structure created. Generating images...' }]
-	// 			}
-	// 		]);
-
-	// 		// Clear the prompt and complete
-	// 		frameStore.isLoading = false;
-	// 		addMessageToFrameStore('info', [
-	// 			{ role: 'assistant', content: [{ type: 'text', text: 'Design created successfully!' }] }
-	// 		]);
-	// 	} catch (e) {
-	// 		console.error('Error generating design:', e);
-	// 		generationError = e instanceof Error ? e.message : 'Failed to generate design';
-	// 		addMessageToFrameStore('error', [
-	// 			{
-	// 				role: 'user',
-	// 				content: [{ type: 'text', text: `Design generation failed: ${generationError}` }]
-	// 			}
-	// 		]);
-	// 		frameStore.isLoading = false;
-	// 	} finally {
-	// 		isGeneratingHTML = false;
-	// 	}
-	// }
-
 	async function handleSubmit() {
 		if (!user_input.trim()) {
 			console.error('No prompt provided');
 			return;
 		}
+
 		frameStore.isLoading = true;
-		prompt = user_input;
+		generationError = ''; // Clear previous errors
+		prompt = user_input; // Store the current input as the prompt
+		user_input = ''; // Clear the input field immediately
 
-		// Capture the current design state as a screenshot
-		const { url: canvasScreenshotUrl, error } = await captureCanvasScreenshot(
-			`#${frameStore.frame.id}`
-		);
+		let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
 
-		if (error || !canvasScreenshotUrl) {
-			throw new Error(error?.message || 'Failed to capture canvas screenshot');
-		}
-
-		addMessageToFrameStore('image', [
-			{
-				role: 'user',
-				content: [{ type: 'image_url', image_url: { url: canvasScreenshotUrl, detail: 'high' } }]
-			}
-		]);
-		addMessageToFrameStore('user', [
-			{ role: 'user', content: [{ type: 'text', text: user_input }] }
-		]);
-		user_input = '';
 		try {
-			const response = await fetch('/api/generate-design/html-design', {
+			// 1. Capture Screenshot
+			const screenshotResult = await captureCanvasScreenshot(`#${frameStore.frame.id}`);
+			if (screenshotResult.error || !screenshotResult.url) {
+				throw new Error(screenshotResult.error?.message || 'Failed to capture canvas screenshot');
+			}
+			const canvasScreenshotUrl = screenshotResult.url;
+
+			addMessageToFrameStore('image', [
+				{
+					role: 'user',
+					content: [{ type: 'image_url', image_url: { url: canvasScreenshotUrl, detail: 'high' } }]
+				}
+			]);
+			addMessageToFrameStore('user', [{ role: 'user', content: [{ type: 'text', text: prompt }] }]);
+
+			// 2. Generate Design with Timeout
+			const designGenerationPromise = fetch('/api/generate-design/html-design', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
 					prompt,
-					previous_design_html: frameStore.html.raw || '',
-					artboard_size: `${frameStore.frame.width}x${frameStore.frame.height}`,
+					previous_design_html: frameStore.html.raw || '<div>Blank Canvas</div>',
+					current_height: frameStore.frame.height,
+					current_width: frameStore.frame.width,
 					chat_history_messages: frame_chat_messages.messages,
 					skip_concept: frameStore.chat_settings.skip_concept
 				})
 			});
 
+			const timeoutPromise = new Promise<never>((_, reject) => {
+				timeoutId = setTimeout(() => {
+					reject(new Error('Design generation timed out after 180 seconds'));
+				}, 180000); // 180 seconds (3 minutes)
+			});
+
+			// Race the API call against the timeout
+			const response = await Promise.race([designGenerationPromise, timeoutPromise]);
+
+			// If we reach here, the fetch completed (successfully or with an error status) before the timeout
+			if (timeoutId) {
+				clearTimeout(timeoutId); // Clear the timeout
+				timeoutId = undefined;
+			}
+
 			if (!response.ok) {
-				throw new Error('Failed to generate design');
+				let errorResponseMessage = `Failed to generate design (status: ${response.status})`;
+				try {
+					const errorData = await response.json();
+					errorResponseMessage = errorData.message || errorData.error || errorResponseMessage;
+				} catch (e) {
+					// Ignore if parsing error body fails, stick to original message
+				}
+				throw new Error(errorResponseMessage);
 			}
 
 			const data = await response.json();
@@ -248,28 +157,29 @@
 			addMessageToFrameStore('assistant', [
 				{ role: 'assistant', content: [{ type: 'text', text: data.design_concept }] }
 			]);
-		} catch (error) {
-			console.error('Error generating design:', error);
-			// Handle error appropriately
-			frameStore.isLoading = false;
+		} catch (err: any) {
+			// Catch any error, including the timeout or screenshot error
+			console.error('Error in handleSubmit:', err);
+			generationError = err.message || 'An unexpected error occurred during the process.';
+			if (timeoutId) {
+				// Ensure timeout is cleared if an error occurred while it was active
+				clearTimeout(timeoutId);
+				timeoutId = undefined;
+			}
 		} finally {
-			frameStore.isLoading = false;
+			if (timeoutId) {
+				// Final safety clear for timeout, e.g. if try block exited unexpectedly
+				clearTimeout(timeoutId);
+			}
+			frameStore.isLoading = false; // Ensure loading state is always reset
 		}
 	}
 </script>
 
-<div class="relative flex h-full flex-col overflow-hidden bg-[#131620]">
-	<!-- Header -->
-	<div class="flex items-center px-6 py-3">
-		<div class="flex items-center gap-2.5">
-			<div class="h-2.5 w-2.5 animate-pulse rounded-full bg-[#3b82f6]"></div>
-			<h3 class="text-base font-medium text-white/90">AI Design Assistant</h3>
-		</div>
-	</div>
-
+<div class="bg-sidebar-background relative flex h-full flex-col overflow-hidden px-2 pb-2">
 	<!-- Messages area with ScrollArea -->
-	<ScrollArea.Root class="relative flex-1 px-4" id="chat-scroll-area">
-		<div class="space-y-4 pb-4">
+	<ScrollArea orientation="vertical" class="relative min-h-0 flex-1" id="chat-scroll-area">
+		<div class="space-y-2 pb-2">
 			{#if frame_chat_messages.messages.length === 0}
 				<div class="flex h-[300px] flex-col items-center justify-center py-8 text-center">
 					<div class="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#1e293b]">
@@ -311,30 +221,30 @@
 				</div>
 			{/if}
 		</div>
-		<ScrollArea.Scrollbar orientation="vertical" />
-	</ScrollArea.Root>
+	</ScrollArea>
 
 	<!-- Input area - fixed at bottom of container -->
-	<div class="px-4 pb-4 pt-2">
-		<form onsubmit={handleSubmit} class="space-y-3">
+	<div class="bg-sidebar-background rounded-t-xl">
+		<form onsubmit={handleSubmit} class="gap-1">
 			<div class="relative">
 				<Textarea
 					id="prompt-textarea"
-					class="max-h-40 min-h-24 w-full resize-y overflow-y-auto rounded-xl border-[#2a3042] bg-[#171c2c] p-4 pr-14 text-base text-white/90 placeholder:text-white/40 focus-visible:border-[#3b82f6]/50 focus-visible:ring-1 focus-visible:ring-[#3b82f6]/20"
-					placeholder="Describe your design..."
+					class="max-h-40 min-h-24 w-full resize-y overflow-y-auto rounded-xl border border-border bg-card p-2 pr-14 text-sm text-white/90 outline-none placeholder:text-white/40"
+					placeholder="Imagine Anything..."
 					bind:value={user_input}
 					disabled={frameStore.isLoading}
 				/>
 				<Button
-					class="absolute bottom-3 right-3 h-10 w-10 rounded-full bg-[#3b82f6] p-0 transition-colors duration-200 hover:bg-[#2563eb]"
+					class="bg- absolute bottom-3 right-3 h-6 rounded-lg px-1 transition-colors duration-200 hover:bg-accent"
 					type="submit"
-					size="icon"
+					size="sm"
+					variant="outline"
 					disabled={frameStore.isLoading || !user_input.trim()}
 				>
 					{#if frameStore.isLoading}
-						<Loader2 class="h-5 w-5 animate-spin text-white" />
+						<Loader2 class="h-4 w-4 animate-spin text-white" />
 					{:else}
-						<Send class="h-5 w-5 text-white" />
+						<Send class="h-4 w-4 text-white" /> Send
 					{/if}
 				</Button>
 			</div>
@@ -342,33 +252,36 @@
 			<div class="flex items-center justify-between px-1">
 				<div class="flex h-full items-center gap-3">
 					<Switch
-						class="h-5 w-10 bg-card data-[state=checked]:bg-[#3b82f6]"
+						class="h-5 w-10 bg-popover data-[state=checked]:bg-accent"
 						id="concept-toggle"
 						name="concept-toggle"
 						bind:checked={frameStore.chat_settings.skip_concept}
 					/>
 					<label
 						for="concept-toggle"
-						class="flex h-full items-center gap-1.5 text-sm font-medium leading-none text-white"
+						class="flex h-full items-center gap-2.5 text-xs font-medium leading-none text-white"
 					>
 						{#if frameStore.chat_settings.skip_concept}
-							<Ban class="h-4 w-4 text-white" />
+							<Ban class="h-4 w-4 text-muted" />
+							<span class="text-muted">Concept OFF</span>
 						{:else}
-							<Lightbulb class="h-4 w-4 text-[#3b82f6]" />
+							<div class="flex items-center gap-1 rounded-md bg-accent px-1.5 py-1">
+								<Lightbulb class="h-4 w-4 text-accent-foreground" />
+								<span class="text-accent-foreground">Concept ON</span>
+							</div>
 						{/if}
-						{frameStore.chat_settings.skip_concept ? 'Skip Concept' : 'Include Concept'}
 					</label>
 				</div>
 
 				<Button
 					variant="outline"
 					size="sm"
-					class="h-8 rounded-full px-3 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground"
+					class="h-7 rounded-full px-2 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground"
 					onclick={() => {
 						clearMessagesFromFrameStore();
 					}}
 				>
-					<Trash2 class="mr-2 h-4 w-4" />
+					<Trash2 class="h-4 w-4" />
 					Clear Chat
 				</Button>
 			</div>

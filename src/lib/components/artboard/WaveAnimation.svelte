@@ -4,12 +4,14 @@
 		borderWidth = 5,
 		animationSpeed = 4,
 		variant = 'default',
-		glowIntensity = 10
+		glowIntensity = 10,
+		backdropBlur = 10
 	} = $props<{
 		borderWidth?: number;
 		animationSpeed?: number;
 		variant?: 'default' | 'loading' | 'waiting' | 'empty';
 		glowIntensity?: number;
+		backdropBlur?: number;
 	}>();
 
 	// Derive CSS color variables based on variant
@@ -24,7 +26,10 @@
 	);
 </script>
 
-<div class="wave-container z-[101] scale-110 transform opacity-60 blur-sm">
+<div
+	class="wave-container z-[101] scale-110 transform opacity-60 blur-sm"
+	style="backdrop-filter: blur({backdropBlur}px);"
+>
 	<div
 		class="wave-effect {colorClass} "
 		style="--border-width: {borderWidth}px; --animation-speed: {animationSpeed}s; --glow-intensity: {glowIntensity}px;"
@@ -62,7 +67,7 @@
 		z-index: 0;
 		box-shadow: inset 0 0 var(--glow-intensity, 10px) rgba(255, 255, 255, 0.4);
 		animation:
-			rotate-hue 8s linear infinite,
+			rotate-hue var(--animation-speed, 4s) linear infinite,
 			wave-flow var(--animation-speed, 4s) ease-in-out infinite alternate;
 		opacity: 0.95;
 		filter: brightness(1.2) saturate(1.5);

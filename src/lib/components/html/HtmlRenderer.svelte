@@ -71,61 +71,23 @@
 	}
 
 	// The design HTML is now directly used for rendering items
-	let html_to_render: string | null = $state<string | null>(null);
+	// let html_to_render: string | null = $state<string | null>(null);
+
+	let processed: string = '';
 
 	$effect(() => {
 		if (frameStore.html.raw) {
-			html_to_render = sanitizeHtml(frameStore.html.raw);
-			frameStore.html.processed = html_to_render;
+			const sanitizedHtml = sanitizeHtml(frameStore.html.raw);
+			processed = sanitizedHtml;
+			frameStore.html.processed = sanitizedHtml;
 		}
 		if (browser) {
 			const container = document.getElementById('html-content-container');
 			if (container) {
-				container.innerHTML = frameStore.html.processed || '';
+				container.innerHTML = processed || 'no content';
 			}
 		}
 	});
-
-	// // Function for handling clicks on the artboard background to deselect items
-	// function handleArtboardBackgroundClick(event: MouseEvent) {
-	// 	// If the click is directly on this container (not bubbled from a child)
-	// 	// then deselect any currently selected item.
-	// 	if (event.target === event.currentTarget) {
-	// 		frameStore.selected_element = null;
-	// 	}
-	// }
-
-	// // Resize handling
-	// onMount(() => {
-	// 	// setTimeout(fitTextInContainers, 100); // Initial call if still used
-
-	// 	if (browser) {
-	// 		const resizeObserver = new ResizeObserver(() => {
-	// 			// fitTextInContainers(); // Call if still used
-	// 		});
-
-	// 		const container = document.getElementById(frame_container_id);
-	// 		if (container) {
-	// 			resizeObserver.observe(container);
-	// 		}
-
-	// 		return () => {
-	// 			if (container) {
-	// 				resizeObserver.disconnect();
-	// 			}
-	// 		};
-	// 	}
-	// });
-
-	// onDestroy(() => {
-	// 	if (browser) {
-	// 		const container = document.getElementById(frame_container_id);
-	// 		if (container) {
-	// 			const resizeObserver = new ResizeObserver(() => {});
-	// 			resizeObserver.disconnect();
-	// 		}
-	// 	}
-	// });
 </script>
 
 {#if frameStore.html.processed}
@@ -134,10 +96,14 @@
 		class="relative overflow-hidden border-2 border-dashed border-border"
 		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
 	>
-		<div id="html-content-container" class="relative h-full w-full"></div>
+		<div
+			id="html-content-container"
+			class="relative"
+			style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
+		></div>
 
 		{#if frameStore.isLoading}
-			<WaveAnimation variant="default" />
+			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
 		{/if}
 	</div>
 {:else}
@@ -147,9 +113,9 @@
 		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
 	>
 		{#if frameStore.isLoading}
-			<WaveAnimation variant="loading" />
+			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
 		{:else}
-			<WaveAnimation variant="waiting" />
+			<WaveAnimation variant="waiting" backdropBlur={10} animationSpeed={30} />
 		{/if}
 	</div>
 {/if}

@@ -4,6 +4,10 @@
 	import * as Resizable from '$lib/components/ui/resizable';
 </script>
 
+<svelte:head>
+	<script src="https://cdn.tailwindcss.com"></script>
+</svelte:head>
+
 <div class="flex h-screen w-screen flex-1 flex-row overflow-hidden">
 	<!-- Design canvas with artboard controls -->
 
