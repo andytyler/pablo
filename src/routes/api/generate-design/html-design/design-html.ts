@@ -4,8 +4,7 @@ import { askGPTWithChatHistory } from '../../../../lib/connections/openai';
 export async function generateDesignConcept(
 	chat_history_messages: ChatMessageWithMeta[]
 ): Promise<string> {
-	console.log('🎨 [design-concept] getDesignConcept');
-	console.log('🎨 [design-concept] chat_history', chat_history_messages);
+	console.log('🎨 [generateDesignConcept] Initiated');
 
 	const new_chat_history_messages = [...chat_history_messages];
 	new_chat_history_messages.push({
@@ -92,22 +91,34 @@ Design Rules:
 8. Think like a professional graphic designer - consider color theory, spacing, typography, and hierarchy.
 9. The artboard is the actual artboard you see, so if you are asked to make a poster then the artboard is the poster that will be exported, do not just add an image of a poster in the artboard.
 10. Layering matters, use z index to control the order of elements, unless creating a specific effect text is usually on top of all other elements.
-13. You must specify each element individually, for example if you want multiple images around the page as a border etc, you must specify each image individually, and where they go. It is not acceptable to say 'multiple elemets' around the page, specify each element and where it is places as a new_item, this is fine to have lots of similar items.
-14. Accuracy is more important than being fast, have as many elements as you need to create the design, you can have 90 if needed. the design MUST be fully detailed.
-15. For text elements, the text size will automatically adjust to fit the container's dimensions if fitText is true, instead of specifying a fixed font size, focus on defining the appropriate text box dimensions (width and height). The text will scale to fit within these boundaries. you can also use the fontSize property to set a fixed font size if needed.
+13. You must specify each element individually, for example if you want multiple images around the page as a border etc, you must specify each image individually, and where they go. It is not acceptable to say 'multiple elemets' around the page, this is fine to have lots of similar items.
+14. Accuracy is more important than being fast, have as many elements as you need to create the design, you can have 900 if needed. the design MUST be fully detailed.
 
+# Artboard
 You MUST include ALL the elements in the design concept, do not leave any out.
 current artboard size: ${current_height}x${current_width}.
-You can change the artboard size (in pixels) in the meta tag i.e. 
+You can change the artboard size (in pixels) in the meta tag e.g. 
 You MUST always include the meta tag, even if missing or the same as the current Design.
 <meta data-width="700" data-height="1000">
-This is NOT an interactive desing it is for a static image. YOu are writing HTML but this is not a webpage, it is a graphic design.
+This is NOT an interactive desing it is for a static image. You are writing HTML but this is not a webpage, it is a graphic design.
+
+# Text Elements
+ALL text MUST be wrapped in a span element, this is important. 
+'data-font-family' MUST be included, this is the font family of the text, you can use any google font, do not include the google font url, just the font name and not the style so 'Poppins' is fine, 'Poppins Bold' is not.
+<span data-font-family="Poppins">Hello World</span>
+
+# Images
+use the 'data-prompt' attribute to describe the image, this is the prompt for the image generation. 
+'data-remove-bg' must also be included, this is a boolean, if true the image will be generated and then background removed. e.g.
+<img data-prompt="a picture of a labrador puppy sitting with its tounge out" data-remove-bg="true" />
+<img data-prompt="a beautiful sunset over a calm ocean with a small boat in the foreground" data-remove-bg="false" />
+
+
 
 Included is the current design as an image and the following is the current design in HTML format.
 MUST respond with the WHOLE HTML including your edits. if you do not include an element that is in the current design HTML it will be deleted from the canvas, this is okay but only do it if it is necessary.
 ---
 `
-						// 3. Images must be described in detail, this description will be the prompt to generate an image, be specific.
 						// 11. The background colour should be relevant to the design BUT images should be used as a background or to enhance the background as a lightly opacty overlay image.
 						// 12. For image handling: When reusing existing images across multiple generations, maintain the exact ID. If you want a new image to be generated, use a new_image item.
 					}
