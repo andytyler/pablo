@@ -271,7 +271,7 @@
 {#if frameStore.html.raw}
 	<div
 		id={frameStore.frame.id}
-		class="relative overflow-hidden border-2 border-dashed border-border"
+		class="relative overflow-hidden border-2 border-dashed border-border bg-white"
 		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
 	>
 		<div
@@ -287,7 +287,7 @@
 	</div>
 {:else}
 	<div
-		class="relative flex items-center justify-center overflow-hidden border-2 border-dashed border-border"
+		class="relative flex items-center justify-center overflow-hidden border-2 border-dashed border-border bg-white"
 		id={frameStore.frame.id}
 		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
 	>

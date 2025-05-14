@@ -130,8 +130,10 @@
 	// });
 </script>
 
-<div class="flex h-full w-full flex-col items-center justify-center gap-2">
-	<div class="flex flex-col items-start gap-2">
+<div
+	class="relative flex h-full w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(theme(colors.slate.500)_0.5px,transparent_0.5px)] [background-size:16px_16px]"
+>
+	<div class="z-10 flex flex-col items-start gap-2">
 		<div class="flex flex-row items-center gap-2">
 			<!-- SIZE CONTROLS -->
 			<div class="flex flex-row items-center gap-2">
@@ -140,7 +142,7 @@
 					id="canvas-width"
 					type="number"
 					bind:value={frameStore.frame.width}
-					class="flex-0 w-16 max-w-min rounded-md border bg-transparent px-2 py-1 text-sm text-muted-foreground focus:outline-none focus:ring-0"
+					class="flex-0 w-16 max-w-min rounded-md border bg-card px-2 py-1 text-sm text-muted-foreground focus:outline-none focus:ring-0"
 				/>
 			</div>
 			<div class="flex items-center gap-2">
@@ -149,7 +151,7 @@
 					id="canvas-height"
 					type="number"
 					bind:value={frameStore.frame.height}
-					class="flex-0 w-16 max-w-min rounded-md border bg-transparent px-2 py-1 text-sm text-muted-foreground focus:outline-none focus:ring-0"
+					class="flex-0 w-16 max-w-min rounded-md border bg-card px-2 py-1 text-sm text-muted-foreground focus:outline-none focus:ring-0"
 				/>
 			</div>
 		</div>

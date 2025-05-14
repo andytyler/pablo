@@ -180,7 +180,7 @@
 	}
 </script>
 
-<div class="bg-sidebar-background relative flex h-full flex-col overflow-hidden px-2 pb-2">
+<div class="relative flex h-full flex-col overflow-hidden bg-black/90 px-2 pb-2">
 	<!-- Messages area with ScrollArea -->
 	<ScrollArea orientation="vertical" class="relative min-h-0 flex-1" id="chat-scroll-area">
 		<div class="space-y-2 pb-2">

@@ -106,7 +106,8 @@ This is NOT an interactive desing it is for a static image. You are writing HTML
 ALL text MUST be wrapped in a span element, this is important. 
 'data-font-family' MUST be included, this is the font family of the text, you can use any legitimate Google Font Family that you KNOW to exist, do not include the google font url, just the font name and not the style so 'Poppins' is fine, 'Poppins Bold' is not.
 <span data-font-family="Poppins">Hello World</span>
-Consider the overall space the text will take up when positioning, do not overlap other elements unintentionally especially considering the size of the text and it overflowing.
+All text MUST have width and height properties. Favour relative postiioning for text. inside the main div with a z index
+Consider the overall space the text will take up when positioning, overflow and text wrap, size of text is important.
 
 # Images
 use the 'data-prompt' attribute to describe the image, this is the prompt for the image generation. 
