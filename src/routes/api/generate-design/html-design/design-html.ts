@@ -138,10 +138,7 @@ MUST respond with the WHOLE HTML including your edits. if you do not include an 
 					{
 						type: 'text',
 						text: `current design in HTML format:
-<meta data-width="${current_width}" data-height="${current_height}">
-*HTML START*
-${previous_design_html}
-*HTML END*`
+${previous_design_html}`
 					}
 				]
 			}
