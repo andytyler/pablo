@@ -130,12 +130,6 @@
 	// });
 </script>
 
-<svelte:head>
-	<link rel="preconnect" href="https://fonts.googleapis.com" />
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<!-- <link href={googleFontsLink()} rel="stylesheet" /> -->
-</svelte:head>
-
 <div class="flex h-full w-full flex-col items-center justify-center gap-2">
 	<div class="flex flex-col items-start gap-2">
 		<div class="flex flex-row items-center gap-2">

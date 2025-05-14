@@ -104,7 +104,7 @@ This is NOT an interactive desing it is for a static image. You are writing HTML
 
 # Text Elements
 ALL text MUST be wrapped in a span element, this is important. 
-'data-font-family' MUST be included, this is the font family of the text, you can use any google font, do not include the google font url, just the font name and not the style so 'Poppins' is fine, 'Poppins Bold' is not.
+'data-font-family' MUST be included, this is the font family of the text, you can use any legitimate Google Font Family that you KNOW to exist, do not include the google font url, just the font name and not the style so 'Poppins' is fine, 'Poppins Bold' is not.
 <span data-font-family="Poppins">Hello World</span>
 
 # Images

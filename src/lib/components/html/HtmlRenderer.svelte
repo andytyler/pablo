@@ -89,6 +89,14 @@
 				const fontFamily = element.getAttribute('data-font-family');
 				if (fontFamily) {
 					localFonts.add(fontFamily);
+					console.log('fontFamily', fontFamily);
+					// add the correct font family to the class attribute as valid tailwind
+					// do not replace all the classes, just add the new one
+
+					const currentClasses = element.getAttribute('class') || '';
+					// replace font family string spaces with _
+					const fontFamilyString = fontFamily.replace(/ /g, '_');
+					element.setAttribute('class', `${currentClasses} font-[${fontFamilyString}]`);
 				}
 			} else {
 				element.setAttribute('contenteditable', 'false');
@@ -122,7 +130,6 @@
 
 			// Update collected fonts with the new set from current HTML
 			collectedSpanFontFamilies = new Set(fonts);
-
 			// Add event listener for blur events at the container level
 			htmlContainer.addEventListener('blur', handleContentEditableBlur, true);
 
@@ -131,7 +138,7 @@
 		}
 	});
 
-	const googleFontsLinkForSpans = $derived(() => {
+	let googleFontsLinkForSpans = $derived.by(() => {
 		if (!browser || collectedSpanFontFamilies.size === 0) {
 			return '';
 		}
@@ -139,6 +146,10 @@
 			.map((font: string) => font.replace(/ /g, '+'))
 			.join('&family=');
 		if (!fontFamilies) return '';
+		console.log(
+			'fontFamilies',
+			`https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`
+		);
 		return `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
 	});
 
@@ -158,6 +169,7 @@
 		await Promise.all(
 			Array.from(imgElements).map(async (img) => {
 				const prompt = img.dataset.prompt;
+				const removeBg = img.dataset.removeBg;
 				if (!prompt) {
 					img.removeAttribute('data-prompt'); // Invalid prompt, remove attribute
 					return;
@@ -176,8 +188,8 @@
 						image_item: {
 							item: {
 								description: prompt,
-								id: imgId
-								// You could add other properties here if needed by the API, e.g., remove_background: false
+								id: imgId,
+								remove_background: removeBg === 'true' ? true : false
 							}
 						}
 					};
@@ -249,10 +261,10 @@
 </script>
 
 <svelte:head>
-	{#if googleFontsLinkForSpans()}
+	{#if googleFontsLinkForSpans}
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-		<link href={googleFontsLinkForSpans()} rel="stylesheet" />
+		<link href={googleFontsLinkForSpans} rel="stylesheet" />
 	{/if}
 </svelte:head>
 
