@@ -619,6 +619,7 @@
 			}
 
 			// Update the element
+			element.style.transformOrigin = '0 0'; // Ensure top-left pivot
 			element.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
 			element.style.width = `${width}px`;
 			element.style.height = `${height}px`;
@@ -644,6 +645,7 @@
 					item.x += dxCanvas;
 					item.y += dyCanvas;
 					const rotation = item.rotation || 0;
+					item.element.style.transformOrigin = '0 0'; // Ensure top-left pivot for group items too
 					item.element.style.transform = `translate(${item.x}px, ${item.y}px) rotate(${rotation}deg)`;
 					item.element.setAttribute('data-x', item.x.toString());
 					item.element.setAttribute('data-y', item.y.toString());
@@ -702,6 +704,7 @@
 			style="
 				width: {initialElementWidth}px; 
 				height: {initialElementHeight}px; 
+				transform-origin: 0 0; /* Ensure top-left pivot */
 				transform: translate({initialElementX}px, {initialElementY}px) rotate({initialElementRotation}deg);
 			"
 		>
@@ -723,6 +726,7 @@
 			style="
 				width: 100px; 
 				height: 120px; 
+				transform-origin: 0 0; /* Ensure top-left pivot */
 				transform: translate({initialElementX + 200}px, {initialElementY +
 				50}px) rotate({initialElementRotation}deg);
 			"
