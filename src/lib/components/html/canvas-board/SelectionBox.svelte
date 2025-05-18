@@ -257,7 +257,7 @@
 						if (!selectedItem) return;
 
 						// Handle rotation for dragging - adjust movement based on rotation
-						const angleRad = ((selectedItem.rotation || 0) * Math.PI) / 180;
+						// const angleRad = ((selectedItem.rotation || 0) * Math.PI) / 180;
 						let dx = event.dx / zoom;
 						let dy = event.dy / zoom;
 
@@ -269,14 +269,14 @@
 						}
 					}
 				},
-				inertia: true,
-				modifiers: [
-					// Add a modifiers array for consistency with other interactions
-					interact.modifiers.restrict({
-						restriction: 'parent',
-						endOnly: true
-					})
-				]
+				inertia: true
+				// Removing modifiers to prevent potential conflict with item dragging
+				// modifiers: [
+				// 	interact.modifiers.restrict({
+				// 		restriction: 'parent',
+				// 		endOnly: true
+				// 	})
+				// ]
 			});
 
 			// Rotation interaction

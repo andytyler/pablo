@@ -25,8 +25,6 @@
 	// Element references
 	let containerElement: HTMLDivElement | undefined = $state();
 	let canvasContentElement: HTMLDivElement | undefined = $state();
-	let draggableElement1: HTMLDivElement | undefined = $state(); // Ref for first draggable
-	let draggableElement2: HTMLDivElement | undefined = $state(); // Ref for second draggable
 
 	// Interactable instances for cleanup
 	let panInteraction: Interact.Interactable | null = null;
@@ -110,7 +108,7 @@
 				!event.shiftKey && // Only deselect if shift is not pressed
 				(targetElement === containerElement ||
 					(targetElement === canvasContentElement &&
-						!targetElement.closest('.draggable-resizable') &&
+						!targetElement.closest('.canvas-item') &&
 						!targetElement.closest('.selection-box') &&
 						!targetElement.closest('.zoom-controls')))
 			) {
@@ -154,7 +152,7 @@
 				}
 				const target = event.target as HTMLElement;
 				if (
-					target.closest('.draggable-resizable') ||
+					target.closest('.canvas-item') ||
 					target.closest('.selection-box') ||
 					target.closest('.zoom-controls')
 				) {
@@ -178,24 +176,26 @@
 			});
 
 		// 2. Draggable and Resizable items within the canvasContentElement
-		itemsInteraction = interact('.draggable-resizable', { context: canvasContentElement })
+		itemsInteraction = interact('.canvas-item', { context: canvasContentElement })
 			.draggable({
 				inertia: true,
 				listeners: {
 					move: dragMoveListener,
 					end: (event: InteractDragEvent) => {
-						if (selectedItemsData.length === 1 && selectedItemsData[0].element === event.target) {
-							const target = event.target as HTMLElement;
-							selectedItemsData[0].x = parseFloat(target.getAttribute('data-x') || '0');
-							selectedItemsData[0].y = parseFloat(target.getAttribute('data-y') || '0');
-						}
+						// if (selectedItemsData.length === 1 && selectedItemsData[0].element === event.target) {
+						// 	const target = event.target as HTMLElement;
+						// 	// These are already updated by dragMoveListener, so this might be redundant.
+						// 	// selectedItemsData[0].x = parseFloat(target.getAttribute('data-x') || '0');
+						// 	// selectedItemsData[0].y = parseFloat(target.getAttribute('data-y') || '0');
+						// }
+						// The main purpose of this 'end' listener for draggable items might be for any
+						// final state saving or logging if needed, beyond what dragMoveListener handles.
+						// For now, positions are updated reactively by dragMoveListener.
 					}
 				},
 				modifiers: [
-					// interact.modifiers.restrictRect({ // Example: if you want to restrict to parent
-					// 	restriction: 'parent',
-					// 	endOnly: true
-					// })
+					// interact.modifiers.restrictRect({ restriction: null }) // Explicitly no restriction - This was causing a type error
+					// An empty array should mean no modifiers are applied, hence no restrictions from here.
 				]
 			})
 			.resizable({
@@ -262,6 +262,11 @@
 				const target = event.currentTarget as HTMLElement;
 				const shiftKey = (event.originalEvent as MouseEvent).shiftKey;
 
+				// Ensure the target is indeed a canvas-item before proceeding
+				if (!target.classList.contains('canvas-item')) {
+					return;
+				}
+
 				// Get stored styles or create empty set
 				const storedStyles = elementStyles.get(target) || new Set<string>();
 
@@ -290,7 +295,7 @@
 				}
 
 				// Apply stored styles
-				target.className = 'draggable-resizable selected ' + Array.from(storedStyles).join(' ');
+				target.className = 'canvas-item selected ' + Array.from(storedStyles).join(' ');
 
 				event.stopImmediatePropagation();
 			});
@@ -407,7 +412,7 @@
 				target !== canvasContentElement &&
 				!(
 					canvasContentElement?.contains(target) &&
-					target.closest('.draggable-resizable') === null &&
+					target.closest('.canvas-item') === null &&
 					target.closest('.selection-box') === null &&
 					target.closest('.zoom-controls') === null
 				)
@@ -459,8 +464,7 @@
 			const marqueeCanvasY2 = (mScreenY2 - _containerRect.top - panY) / zoom;
 
 			const itemsToSelect: SelectedItemDataNonNull[] = [];
-			const draggablesInDOM =
-				canvasContentElement.querySelectorAll<HTMLElement>('.draggable-resizable');
+			const draggablesInDOM = canvasContentElement.querySelectorAll<HTMLElement>('.canvas-item');
 
 			draggablesInDOM.forEach((el) => {
 				const itemX = parseFloat(el.getAttribute('data-x') || '0');
@@ -537,6 +541,57 @@
 		};
 		document.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('keyup', handleKeyUp);
+
+		// Initialize dynamic children
+		const interactiveItems = canvasContentElement.querySelectorAll<HTMLElement>('.canvas-item');
+		interactiveItems.forEach((element) => {
+			const initialX = parseFloat(element.dataset.x || element.style.left || '0');
+			const initialY = parseFloat(element.dataset.y || element.style.top || '0');
+			const initialWidth = parseFloat(
+				element.dataset.width || element.offsetWidth.toString() || '100'
+			); // Default width if not found
+			const initialHeight = parseFloat(
+				element.dataset.height || element.offsetHeight.toString() || '100'
+			); // Default height if not found
+			const initialRotation = parseFloat(element.dataset.rotation || '0');
+
+			element.setAttribute('data-x', initialX.toString());
+			element.setAttribute('data-y', initialY.toString());
+			element.setAttribute('data-width', initialWidth.toString());
+			element.setAttribute('data-height', initialHeight.toString());
+			element.setAttribute('data-rotation', initialRotation.toString());
+
+			// Ensure necessary styles for positioning and interaction
+			element.style.position = 'absolute'; // Important for transform to work as expected
+			element.style.boxSizing = 'border-box'; // Consistent with previous hardcoded items
+			element.style.touchAction = 'none'; // From previous hardcoded items
+			element.style.userSelect = 'none'; // From previous hardcoded items
+
+			element.style.width = `${initialWidth}px`;
+			element.style.height = `${initialHeight}px`;
+			element.style.transformOrigin = '0 0';
+			element.style.transform = `translate(${initialX}px, ${initialY}px) rotate(${initialRotation}deg)`;
+
+			if (!elementStyles.has(element)) {
+				const styles = new Set<string>();
+				Array.from(element.classList).forEach((cls) => {
+					if (
+						cls !== 'canvas-item' &&
+						cls !== 'selected' &&
+						!cls.startsWith('draggable-') &&
+						!cls.startsWith('interact-')
+					) {
+						styles.add(cls);
+					}
+				});
+				elementStyles.set(element, styles);
+				// Update className to ensure canvas-item is present and other styles are preserved
+				// The tap handler and styleUpdate will manage 'selected'
+				let baseClasses = 'canvas-item';
+				styles.forEach((s) => (baseClasses += ` ${s}`));
+				element.className = baseClasses;
+			}
+		});
 
 		return () => {
 			if (panInteraction) panInteraction.unset();
@@ -635,6 +690,15 @@
 			selectedItem.width = width;
 			selectedItem.height = height;
 			selectedItem.rotation = rotation;
+
+			// Dispatch a styleupdate event if necessary for AttributeEditorPanel to pick up direct manipulations
+			const event = new CustomEvent('styleupdate', {
+				detail: {
+					element: selectedItem.element,
+					styles: elementStyles.get(selectedItem.element) || new Set()
+				}
+			});
+			selectedItem.element.dispatchEvent(event);
 		} else if (selectedItemsData.length > 1) {
 			// Multiple items selected - Group Dragging (Resize and Rotation for group is TBD)
 			if (detail.dx || detail.dy) {
@@ -653,21 +717,23 @@
 			}
 			// Group Resizing and Rotation logic will go here eventually.
 			// For now, dWidth/dHeight/dRotation for groups are ignored.
+
+			// Dispatch styleupdate for all items in group if AttributeEditorPanel needs to react
+			selectedItemsData.forEach((item) => {
+				const event = new CustomEvent('styleupdate', {
+					detail: { element: item.element, styles: elementStyles.get(item.element) || new Set() }
+				});
+				item.element.dispatchEvent(event);
+			});
 		}
 	}
-
-	const initialElementX = 50;
-	const initialElementY = 50;
-	const initialElementWidth = 150;
-	const initialElementHeight = 100;
-	const initialElementRotation = 0;
 
 	// Add function to handle style updates
 	function handleStyleUpdate(element: HTMLElement, styles: Set<string>) {
 		elementStyles.set(element, styles);
 		// Ensure styles are applied to the element
 		element.className =
-			'draggable-resizable' +
+			'canvas-item' +
 			(selectedItemsData.find((item) => item.element === element) ? ' selected' : '') +
 			' ' +
 			Array.from(styles).join(' ');
@@ -689,51 +755,7 @@
 		bind:this={canvasContentElement}
 		style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
 	>
-		<div
-			bind:this={draggableElement1}
-			class="draggable-resizable absolute box-border flex cursor-move touch-none select-none items-center justify-center border border-red-800 bg-red-200 text-center {selectedItemsData.find(
-				(item) => item.element === draggableElement1
-			)
-				? 'selected'
-				: ''}"
-			data-x={initialElementX}
-			data-y={initialElementY}
-			data-width={initialElementWidth}
-			data-height={initialElementHeight}
-			data-rotation={initialElementRotation}
-			style="
-				width: {initialElementWidth}px; 
-				height: {initialElementHeight}px; 
-				transform-origin: 0 0; /* Ensure top-left pivot */
-				transform: translate({initialElementX}px, {initialElementY}px) rotate({initialElementRotation}deg);
-			"
-		>
-			Drag & Resize Me
-		</div>
-
-		<div
-			bind:this={draggableElement2}
-			class="draggable-resizable absolute box-border flex cursor-move touch-none select-none items-center justify-center border border-blue-800 bg-blue-200 text-center {selectedItemsData.find(
-				(item) => item.element === draggableElement2
-			)
-				? 'selected'
-				: ''}"
-			data-x={initialElementX + 200}
-			data-y={initialElementY + 50}
-			data-width={100}
-			data-height={120}
-			data-rotation={initialElementRotation}
-			style="
-				width: 100px; 
-				height: 120px; 
-				transform-origin: 0 0; /* Ensure top-left pivot */
-				transform: translate({initialElementX + 200}px, {initialElementY +
-				50}px) rotate({initialElementRotation}deg);
-			"
-		>
-			Another One
-			<span class="bg-red-500 font-mono font-bold text-white"> Hello </span>
-		</div>
+		<slot></slot>
 
 		{#if activeSelectionProperties}
 			<SelectionBox
@@ -777,16 +799,16 @@
 		cursor: grabbing !important;
 	}
 
-	.draggable-resizable.selected {
+	.canvas-item.selected {
 		outline: 2px solid dodgerblue;
 		outline-offset: 1px;
 	}
 
-	.draggable-resizable:hover {
+	.canvas-item:hover {
 		box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.5);
 	}
 
-	.draggable-resizable:active {
+	.canvas-item:active {
 		opacity: 0.9;
 		box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
 	}
