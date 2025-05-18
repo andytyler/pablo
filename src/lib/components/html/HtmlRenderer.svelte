@@ -101,7 +101,6 @@
 			} else {
 				element.setAttribute('contenteditable', 'false');
 			}
-			element.setAttribute('draggable', 'true');
 		}
 
 		return { sanitizedString: doc.body.innerHTML, fonts: localFonts };

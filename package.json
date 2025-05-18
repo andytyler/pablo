@@ -45,6 +45,7 @@
 		"ai": "^4.2.8",
 		"canvas": "^3.1.0",
 		"html2canvas": "^1.4.1",
+		"interactjs": "^1.10.27",
 		"konva": "^9.3.20",
 		"mode-watcher": "^0.5.1",
 		"openai": "^4.93.0",
