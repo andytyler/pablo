@@ -75,11 +75,32 @@
 		// Remove event handlers from all elements and handle contenteditable
 		const allElements = doc.getElementsByTagName('*');
 		for (let i = 0; i < allElements.length; i++) {
-			const element = allElements[i];
+			const element = allElements[i] as HTMLElement; // Cast to HTMLElement for style property
 			const attributes = element.attributes;
 
 			const currentClasses = element.getAttribute('class') || '';
 			element.setAttribute('class', `${currentClasses} canvas-item`);
+
+			// Apply positioning and dimension styles from data attributes
+			const x = element.dataset.x;
+			const y = element.dataset.y;
+			const width = element.dataset.width;
+			const height = element.dataset.height;
+			const zIndex = element.dataset.zIndex;
+			const rotation = element.dataset.rotation;
+
+			let styleString = element.getAttribute('style') || '';
+
+			if (x !== undefined) styleString += `position: absolute; left: ${x}px; `;
+			if (y !== undefined) styleString += `top: ${y}px; `;
+			if (width !== undefined) styleString += `width: ${width}px; `;
+			if (height !== undefined) styleString += `height: ${height}px; `;
+			if (zIndex !== undefined) styleString += `z-index: ${zIndex}; `;
+			if (rotation !== undefined) styleString += `transform: rotate(${rotation}deg); `;
+
+			if (styleString) {
+				element.setAttribute('style', styleString.trim());
+			}
 
 			const attributesToRemove = [];
 
@@ -300,7 +321,7 @@
 	<div
 		id={frameStore.frame.id}
 		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px;"
-		class="relative overflow-hidden border-2 border-dashed border-border bg-white shadow-lg"
+		class="relative overflow-hidden rounded-sm border-2 border-border bg-background shadow-lg"
 	>
 		{#if frameStore.isLoading}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
