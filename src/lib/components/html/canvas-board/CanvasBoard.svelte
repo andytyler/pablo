@@ -42,6 +42,7 @@
 		height: number;
 		rotation: number; // Required for rotation support
 		styles?: Set<string>;
+		zIndex: number; // Added for z-index support
 	};
 	type SelectedItemData = SelectedItemDataNonNull | null;
 
@@ -274,10 +275,11 @@
 					element: target,
 					x: parseFloat(target.getAttribute('data-x') || '0'),
 					y: parseFloat(target.getAttribute('data-y') || '0'),
-					width: parseFloat(target.getAttribute('data-width') || '0'),
-					height: parseFloat(target.getAttribute('data-height') || '0'),
+					width: parseFloat(target.getAttribute('data-width') || target.offsetWidth.toString()),
+					height: parseFloat(target.getAttribute('data-height') || target.offsetHeight.toString()),
 					rotation: parseFloat(target.getAttribute('data-rotation') || '0'),
-					styles: storedStyles
+					styles: storedStyles,
+					zIndex: parseInt(target.getAttribute('data-z-index') || '0', 10)
 				};
 
 				if (shiftKey) {
@@ -493,7 +495,8 @@
 						width: itemWidth,
 						height: itemHeight,
 						rotation: parseFloat(el.getAttribute('data-rotation') || '0'),
-						styles: elementStyles.get(el) || new Set()
+						styles: elementStyles.get(el) || new Set(),
+						zIndex: parseInt(el.getAttribute('data-z-index') || '0', 10) // Read z-index
 					});
 				}
 			});
@@ -545,50 +548,7 @@
 		// Initialize dynamic children
 		const interactiveItems = canvasContentElement.querySelectorAll<HTMLElement>('.canvas-item');
 		interactiveItems.forEach((element) => {
-			const initialX = parseFloat(element.dataset.x || element.style.left || '0');
-			const initialY = parseFloat(element.dataset.y || element.style.top || '0');
-
-			// Trust our data attributes first, only fallback to DOM measurements if missing or invalid
-			let initialWidth = parseFloat(element.dataset.width || '0');
-			if (initialWidth <= 0) {
-				initialWidth = parseFloat(element.offsetWidth.toString() || '100');
-			}
-
-			let initialHeight = parseFloat(element.dataset.height || '0');
-			if (initialHeight <= 0) {
-				initialHeight = parseFloat(element.offsetHeight.toString() || '100');
-			}
-
-			const initialRotation = parseFloat(element.dataset.rotation || '0');
-
-			// Only update data attributes if they're missing or invalid
-			if (!element.dataset.x || parseFloat(element.dataset.x) !== initialX) {
-				element.setAttribute('data-x', initialX.toString());
-			}
-			if (!element.dataset.y || parseFloat(element.dataset.y) !== initialY) {
-				element.setAttribute('data-y', initialY.toString());
-			}
-			if (!element.dataset.width || parseFloat(element.dataset.width) !== initialWidth) {
-				element.setAttribute('data-width', initialWidth.toString());
-			}
-			if (!element.dataset.height || parseFloat(element.dataset.height) !== initialHeight) {
-				element.setAttribute('data-height', initialHeight.toString());
-			}
-			if (!element.dataset.rotation || parseFloat(element.dataset.rotation) !== initialRotation) {
-				element.setAttribute('data-rotation', initialRotation.toString());
-			}
-
-			// Ensure necessary styles for positioning and interaction
-			element.style.position = 'absolute'; // Important for transform to work as expected
-			element.style.boxSizing = 'border-box'; // Consistent with previous hardcoded items
-			element.style.touchAction = 'none'; // From previous hardcoded items
-			element.style.userSelect = 'none'; // From previous hardcoded items
-
-			element.style.width = `${initialWidth}px`;
-			element.style.height = `${initialHeight}px`;
-			element.style.transformOrigin = '0 0';
-			element.style.transform = `translate(${initialX}px, ${initialY}px) rotate(${initialRotation}deg)`;
-
+			// Store original styles before any modifications
 			if (!elementStyles.has(element)) {
 				const styles = new Set<string>();
 				Array.from(element.classList).forEach((cls) => {
@@ -602,12 +562,42 @@
 					}
 				});
 				elementStyles.set(element, styles);
-				// Update className to ensure canvas-item is present and other styles are preserved
-				// The tap handler and styleUpdate will manage 'selected'
-				let baseClasses = 'canvas-item';
-				styles.forEach((s) => (baseClasses += ` ${s}`));
-				element.className = baseClasses;
 			}
+
+			// Apply box-sizing first to ensure consistent dimension reading
+			element.style.boxSizing = 'border-box';
+
+			// Read positioning data from data attributes (set by AI-generated HTML)
+			const initialX = parseFloat(element.dataset.x || '0');
+			const initialY = parseFloat(element.dataset.y || '0');
+			const initialWidth = parseFloat(
+				element.dataset.width || element.offsetWidth.toString() || '100'
+			);
+			const initialHeight = parseFloat(
+				element.dataset.height || element.offsetHeight.toString() || '100'
+			);
+			const initialRotation = parseFloat(element.dataset.rotation || '0');
+			const initialZIndex = parseInt(element.dataset.zIndex || '0', 10);
+
+			// Apply canvas positioning system - convert data attributes to actual positioning
+			element.style.position = 'absolute';
+			element.style.left = '0';
+			element.style.top = '0';
+			element.style.width = `${initialWidth}px`;
+			element.style.height = `${initialHeight}px`;
+			element.style.transformOrigin = '0 0';
+			element.style.transform = `translate(${initialX}px, ${initialY}px) rotate(${initialRotation}deg)`;
+			element.style.zIndex = initialZIndex.toString();
+
+			// Ensure necessary interaction styles are set
+			element.style.touchAction = 'none';
+			element.style.userSelect = 'none';
+
+			// Preserve original classes while ensuring canvas-item is present
+			const storedStyles = elementStyles.get(element) || new Set();
+			let baseClasses = 'canvas-item';
+			storedStyles.forEach((s) => (baseClasses += ` ${s}`));
+			element.className = baseClasses;
 		});
 
 		return () => {

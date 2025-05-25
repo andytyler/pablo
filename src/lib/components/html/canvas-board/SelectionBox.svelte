@@ -60,6 +60,7 @@
 			pointer-events: auto;
 			touch-action: none;
 			cursor: move;
+			z-index: 999;
 		`;
 	});
 
@@ -513,7 +514,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -529,7 +530,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -545,7 +546,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -561,7 +562,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -577,7 +578,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -593,7 +594,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -609,7 +610,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 		<div
@@ -625,7 +626,7 @@
 				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
-				z-index: 10;
+				z-index: 1000;
 			"
 		></div>
 
@@ -643,7 +644,7 @@
 				border-radius: 50%;
 				cursor: grab;
 				pointer-events: auto;
-				z-index: 11;
+				z-index: 1001;
 			"
 		></div>
 	</div>

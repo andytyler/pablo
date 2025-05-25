@@ -119,6 +119,7 @@ This is NOT an interactive desing it is for a static image. You are writing HTML
 
 # Text Elements
 ALL text MUST be wrapped in a div element, this is important. 
+you MUST use pixels for text size, do not use relative units. e.g. text-[48] is fine, text-[100%] or text-xl is not.
 'data-font-family' MUST be included, this is the font family of the text, you can use any legitimate Google Font Family that you KNOW to exist, do not include the google font url, just the font name and not the style so 'Poppins' is fine, 'Poppins Bold' is not.
 <div data-font-family="Poppins">Hello World</div>
 All text MUST have width and height properties. Favour relative postiioning for text. inside the main div with a z index
