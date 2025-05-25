@@ -5,7 +5,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { frameStore, resetArtboard } from '$lib/stores/frame-store.svelte';
+	import { frameStore, resetFrame } from '$lib/stores/frame-store.svelte';
 	import { Trash } from 'lucide-svelte';
 	import { ScrollArea } from '../ui/scroll-area';
 	import ChatPane from './ChatPane.svelte';
@@ -61,7 +61,7 @@
 				<div class="space-y-2">
 					<Label>Actions</Label>
 					<div class="flex flex-col gap-2">
-						<Button variant="outline" onclick={resetArtboard} class="w-full">
+						<Button variant="outline" onclick={resetFrame} class="w-full">
 							<Trash class="mr-2 h-4 w-4" />
 							Clear Design
 						</Button>

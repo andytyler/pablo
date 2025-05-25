@@ -39,7 +39,7 @@ const defaultFrameState: FrameState = {
 	design_concept: null,
 	frame: { id: 'frame-container-99485', width: 450, height: 800 },
 	chat_settings: {
-		skip_concept: false,
+		skip_concept: true,
 		stream: false
 	},
 	html: {
@@ -102,7 +102,7 @@ export function removeImageFromFrameStore(id: string) {
 	persistFrameStore(); // Persist after modifications
 }
 
-export function resetArtboard() {
+export function resetFrame() {
 	frameStore.frame.id = 'frame-container-99485';
 	frameStore.frame.width = 600;
 	frameStore.frame.height = 600;

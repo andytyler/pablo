@@ -31,13 +31,17 @@
 		if (htmlContainer) {
 			const newHtml = htmlContainer.innerHTML;
 			console.log('New HTML:', newHtml);
-			// Update both raw and processed HTML
-			frameStore.html = {
-				raw: newHtml,
-				processed: newHtml
-			};
-			persistFrameStore(); // Persist the changes to localStorage
-			console.log('Store updated and persisted');
+			// Only update if the HTML actually changed to prevent loops
+			if (newHtml !== lastProcessedHtml) {
+				lastProcessedHtml = newHtml;
+				// Update both raw and processed HTML
+				frameStore.html = {
+					raw: newHtml,
+					processed: newHtml
+				};
+				persistFrameStore(); // Persist the changes to localStorage
+				console.log('Store updated and persisted');
+			}
 		}
 	}
 
@@ -74,6 +78,9 @@
 			const element = allElements[i];
 			const attributes = element.attributes;
 
+			const currentClasses = element.getAttribute('class') || '';
+			element.setAttribute('class', `${currentClasses} canvas-item`);
+
 			const attributesToRemove = [];
 
 			for (let j = 0; j < attributes.length; j++) {
@@ -107,6 +114,7 @@
 	}
 
 	let htmlContainer = $state<HTMLDivElement | null>(null);
+	let lastProcessedHtml = $state(''); // Track what we last processed to avoid loops
 
 	// Effect to handle frame dimensions updates
 	$effect(() => {
@@ -123,12 +131,20 @@
 
 	// Effect to update the HTML content and set up event listeners
 	$effect(() => {
-		if (htmlContainer && browser && frameStore.html.raw) {
+		if (
+			htmlContainer &&
+			browser &&
+			frameStore.html.raw &&
+			frameStore.html.raw !== lastProcessedHtml
+		) {
+			lastProcessedHtml = frameStore.html.raw;
+
 			const { sanitizedString, fonts } = sanitizeHtml(frameStore.html.raw);
 			htmlContainer.innerHTML = sanitizedString || 'no content';
 
 			// Update collected fonts with the new set from current HTML
 			collectedSpanFontFamilies = new Set(fonts);
+
 			// Add event listener for blur events at the container level
 			htmlContainer.addEventListener('blur', handleContentEditableBlur, true);
 
@@ -237,15 +253,17 @@
 
 		if (htmlChanged) {
 			const newHtml = htmlContainer.innerHTML;
-			// Update the store with the new HTML containing generated image URLs
-			// This might trigger the $effect that calls sanitizeHtml again.
-			// The data-generated="true" and removal of data-prompt should prevent re-processing.
-			frameStore.html = {
-				raw: newHtml, // Or should raw be the original? For now, keep them in sync like handleContentEditableBlur
-				processed: newHtml
-			};
-			persistFrameStore();
-			console.log('Image processing complete, store updated and persisted.');
+			// Only update if the HTML actually changed to prevent loops
+			if (newHtml !== lastProcessedHtml) {
+				lastProcessedHtml = newHtml;
+				// Update the store with the new HTML containing generated image URLs
+				frameStore.html = {
+					raw: newHtml,
+					processed: newHtml
+				};
+				persistFrameStore();
+				console.log('Image processing complete, store updated and persisted.');
+			}
 		}
 	}
 
@@ -269,26 +287,28 @@
 
 {#if frameStore.html.raw}
 	<div
+		bind:this={htmlContainer}
 		id={frameStore.frame.id}
-		class="relative overflow-hidden border-2 border-dashed border-border bg-white"
-		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
+		data-width={frameStore.frame.width}
+		data-height={frameStore.frame.height}
+		data-x={0}
+		data-y={0}
+		data-z-index={0}
+		class=" border-2 border-border bg-background shadow-lg"
 	>
-		<div
-			bind:this={htmlContainer}
-			id="html-content-container"
-			class="relative"
-			style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
-		></div>
-
 		{#if frameStore.isLoading}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
 		{/if}
 	</div>
 {:else}
 	<div
-		class="relative flex items-center justify-center overflow-hidden border-2 border-dashed border-border bg-white"
+		class=" overflow-hidden border-2 border-dashed border-border bg-white shadow-lg"
 		id={frameStore.frame.id}
-		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px"
+		data-width={frameStore.frame.width}
+		data-height={frameStore.frame.height}
+		data-x={0}
+		data-y={0}
+		data-z-index={0}
 	>
 		{#if frameStore.isLoading}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />

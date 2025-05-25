@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import AttributeEditorPanel from '$lib/components/html/canvas-board/panels/AttributeEditorPanel.svelte';
 	import type {
 		DragEvent as InteractDragEvent,
 		InteractEvent,
@@ -11,6 +10,7 @@
 	import { onMount } from 'svelte';
 	import SelectionBox from './SelectionBox.svelte';
 	import ZoomControls from './ZoomControls.svelte';
+	import ActionPanel from './panels/ActionPanel.svelte';
 
 	// Svelte 5 state variables for pan and zoom
 	let panX = $state(0);
@@ -547,19 +547,36 @@
 		interactiveItems.forEach((element) => {
 			const initialX = parseFloat(element.dataset.x || element.style.left || '0');
 			const initialY = parseFloat(element.dataset.y || element.style.top || '0');
-			const initialWidth = parseFloat(
-				element.dataset.width || element.offsetWidth.toString() || '100'
-			); // Default width if not found
-			const initialHeight = parseFloat(
-				element.dataset.height || element.offsetHeight.toString() || '100'
-			); // Default height if not found
+
+			// Trust our data attributes first, only fallback to DOM measurements if missing or invalid
+			let initialWidth = parseFloat(element.dataset.width || '0');
+			if (initialWidth <= 0) {
+				initialWidth = parseFloat(element.offsetWidth.toString() || '100');
+			}
+
+			let initialHeight = parseFloat(element.dataset.height || '0');
+			if (initialHeight <= 0) {
+				initialHeight = parseFloat(element.offsetHeight.toString() || '100');
+			}
+
 			const initialRotation = parseFloat(element.dataset.rotation || '0');
 
-			element.setAttribute('data-x', initialX.toString());
-			element.setAttribute('data-y', initialY.toString());
-			element.setAttribute('data-width', initialWidth.toString());
-			element.setAttribute('data-height', initialHeight.toString());
-			element.setAttribute('data-rotation', initialRotation.toString());
+			// Only update data attributes if they're missing or invalid
+			if (!element.dataset.x || parseFloat(element.dataset.x) !== initialX) {
+				element.setAttribute('data-x', initialX.toString());
+			}
+			if (!element.dataset.y || parseFloat(element.dataset.y) !== initialY) {
+				element.setAttribute('data-y', initialY.toString());
+			}
+			if (!element.dataset.width || parseFloat(element.dataset.width) !== initialWidth) {
+				element.setAttribute('data-width', initialWidth.toString());
+			}
+			if (!element.dataset.height || parseFloat(element.dataset.height) !== initialHeight) {
+				element.setAttribute('data-height', initialHeight.toString());
+			}
+			if (!element.dataset.rotation || parseFloat(element.dataset.rotation) !== initialRotation) {
+				element.setAttribute('data-rotation', initialRotation.toString());
+			}
 
 			// Ensure necessary styles for positioning and interaction
 			element.style.position = 'absolute'; // Important for transform to work as expected
@@ -784,13 +801,15 @@
 		defaultPanY={0}
 	/>
 
-	<AttributeEditorPanel
+	<!-- <AttributeEditorPanel
 		selectedItems={selectedItemsData}
 		onStylesUpdate={(element, styles) => {
 			elementStyles.set(element, styles);
 			handleStyleUpdate(element, styles);
 		}}
-	/>
+	/> -->
+
+	<ActionPanel></ActionPanel>
 </div>
 
 <style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { frameStore, resetArtboard } from '$lib/stores/frame-store.svelte';
+	import { frameStore, resetFrame } from '$lib/stores/frame-store.svelte';
 	import { Trash } from 'lucide-svelte';
 	import { Button } from '../ui/button';
 	import HtmlRenderer from './HtmlRenderer.svelte';
@@ -157,7 +157,7 @@
 		</div>
 		<HtmlRenderer />
 		<div class="flex flex-row items-end gap-2">
-			<Button variant="outline" size="icon" onclick={resetArtboard} title="Clear Artboard">
+			<Button variant="outline" size="icon" onclick={resetFrame} title="Clear Artboard">
 				<Trash class="h-4 w-4" />
 			</Button>
 		</div>

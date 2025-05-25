@@ -10,7 +10,7 @@
 		clearMessagesFromFrameStore,
 		frame_chat_messages
 	} from '$lib/stores/frame-messages-store.svelte';
-	import { frameStore, persistFrameStore } from '$lib/stores/frame-store.svelte';
+	import { frameStore, persistFrameStore, resetFrame } from '$lib/stores/frame-store.svelte';
 	import AlertTriangle from '@lucide/svelte/icons/alert-triangle';
 	import Ban from '@lucide/svelte/icons/ban';
 	import Lightbulb from '@lucide/svelte/icons/lightbulb';
@@ -114,7 +114,7 @@
 					current_height: frameStore.frame.height,
 					current_width: frameStore.frame.width,
 					chat_history_messages: frame_chat_messages.messages,
-					skip_concept: frameStore.chat_settings.skip_concept
+					skip_concept: !frameStore.chat_settings.skip_concept
 				})
 			});
 
@@ -186,8 +186,8 @@
 		<div class="space-y-2 pb-2">
 			{#if frame_chat_messages.messages.length === 0}
 				<div class="flex h-[300px] flex-col items-center justify-center py-8 text-center">
-					<div class="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#1e293b]">
-						<Send class="h-6 w-6 rotate-[15deg] text-[#3b82f6]" />
+					<div class="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+						<Send class="h-6 w-6 rotate-[15deg] text-primary" />
 					</div>
 					<p class="text-xl font-medium text-white/90">Let's create something amazing</p>
 					<p class="mt-2 text-base text-white/60">Describe your design and I'll bring it to life</p>
@@ -203,10 +203,10 @@
 					<div class="flex flex-col items-center gap-3">
 						<div class="relative">
 							<div
-								class="h-10 w-10 animate-spin rounded-full border-2 border-[#3b82f6]/30 border-t-[#3b82f6]"
+								class="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
 							></div>
 							<div class="absolute inset-0 flex items-center justify-center">
-								<div class="h-5 w-5 rounded-full bg-[#131620]"></div>
+								<div class="h-5 w-5 rounded-full bg-muted"></div>
 							</div>
 						</div>
 						<span class="text-sm text-white/60">Generating your design...</span>
@@ -239,7 +239,7 @@
 					disabled={frameStore.isLoading}
 				/>
 				<Button
-					class="bg- absolute bottom-3 right-3 h-6 rounded-lg px-1 transition-colors duration-200 hover:bg-accent"
+					class="absolute bottom-3 right-3 h-6 rounded-lg bg-primary px-1 transition-colors duration-200 hover:bg-accent"
 					type="submit"
 					size="sm"
 					variant="outline"
@@ -266,13 +266,13 @@
 						class="flex h-full items-center gap-2.5 text-xs font-medium leading-none text-white"
 					>
 						{#if frameStore.chat_settings.skip_concept}
-							<Ban class="h-4 w-4 text-muted" />
-							<span class="text-muted">Concept OFF</span>
-						{:else}
 							<div class="flex items-center gap-1 rounded-md bg-accent px-1.5 py-1">
 								<Lightbulb class="h-4 w-4 text-accent-foreground" />
 								<span class="text-accent-foreground">Concept ON</span>
 							</div>
+						{:else}
+							<Ban class="h-4 w-4 text-muted" />
+							<span class="text-muted">Concept OFF</span>
 						{/if}
 					</label>
 				</div>
@@ -283,6 +283,7 @@
 					class="h-7 rounded-full px-2 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground"
 					onclick={() => {
 						clearMessagesFromFrameStore();
+						resetFrame();
 					}}
 				>
 					<Trash2 class="h-4 w-4" />

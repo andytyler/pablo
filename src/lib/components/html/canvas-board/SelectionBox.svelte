@@ -35,6 +35,7 @@
 	let rotateInteractable: Interact.Interactable | null = null; // Added for rotation
 	let startAngle = $state(0);
 	let startRotation = $state(0);
+	let accentColour = $state('blue');
 
 	// Type for processed edge information
 	type EdgeInfo = {
@@ -54,7 +55,7 @@
 			height: ${selectedItem.height}px;
 			transform: rotate(${selectedItem.rotation || 0}deg);
 			transform-origin: 0 0;
-			border: 1px solid #007bff;
+			border: 1px solid ${accentColour};
 			box-sizing: border-box;
 			pointer-events: auto;
 			touch-action: none;
@@ -124,16 +125,58 @@
 					// Top-right corner
 					dWidth = pointer_dx_local;
 					dHeight = -pointer_dy_local;
+					dxLocal = 0; // x doesn't change for element's origin
 					dyLocal = pointer_dy_local;
 				} else if (edges.bottom && edges.left) {
 					// Bottom-left corner
 					dWidth = -pointer_dx_local;
 					dHeight = pointer_dy_local;
 					dxLocal = pointer_dx_local;
+					dyLocal = 0; // y doesn't change for element's origin
 				} else if (edges.bottom && edges.right) {
 					// Bottom-right corner
 					dWidth = pointer_dx_local;
 					dHeight = pointer_dy_local;
+					dxLocal = 0; // x,y don't change for element's origin
+					dyLocal = 0;
+				}
+
+				if (event.shiftKey && selectedItem && selectedItem.width > 0 && selectedItem.height > 0) {
+					accentColour = 'green';
+					const aspectRatio = selectedItem.width / selectedItem.height;
+					const initial_dWidth = dWidth;
+					const initial_dHeight = dHeight;
+
+					// Determine dominant axis based on pointer movement in local coordinates
+					if (
+						Math.abs(pointer_dx_local * selectedItem.height) >
+						Math.abs(pointer_dy_local * selectedItem.width)
+					) {
+						// Horizontal pointer movement is more significant for this aspect ratio
+						dWidth = initial_dWidth;
+						dHeight = initial_dWidth / aspectRatio; // sign will be consistent
+					} else {
+						// Vertical pointer movement is more significant (or equal)
+						dHeight = initial_dHeight;
+						dWidth = initial_dHeight * aspectRatio; // sign will be consistent
+					}
+
+					// Recalculate dxLocal, dyLocal for fixed opposite corner
+					if (edges.top && edges.left) {
+						dxLocal = -dWidth;
+						dyLocal = -dHeight;
+					} else if (edges.top && edges.right) {
+						dxLocal = 0;
+						dyLocal = -dHeight;
+					} else if (edges.bottom && edges.left) {
+						dxLocal = -dWidth;
+						dyLocal = 0;
+					} else if (edges.bottom && edges.right) {
+						dxLocal = 0;
+						dyLocal = 0;
+					}
+				} else {
+					accentColour = 'blue';
 				}
 
 				// Rotate local translation back to global axes
@@ -172,6 +215,7 @@
 					dxLocal = pointer_dx_local;
 				} else if (edges.right) {
 					dWidth = pointer_dx_local;
+					// dxLocal = 0; // Element's origin x does not change
 				}
 
 				if (edges.top) {
@@ -179,22 +223,51 @@
 					dyLocal = pointer_dy_local;
 				} else if (edges.bottom) {
 					dHeight = pointer_dy_local;
+					// dyLocal = 0; // Element's origin y does not change
 				}
-
+				// The above logic for dxLocal/dyLocal in non-shift edge resize was slightly off, fixing it for clarity too
+				// For left edge: dWidth = -pdx, dxLocal = pdx (Correct)
+				// For right edge: dWidth = pdx, dxLocal = 0 (Correct)
+				// For top edge: dHeight = -pdy, dyLocal = pdy (Correct)
+				// For bottom edge: dHeight = pdy, dyLocal = 0 (Correct)
+				// Let's ensure the if/else structure correctly sets dxLocal/dyLocal to 0 when needed.
 				if (edges.left) {
-					dWidth = -pointer_dx_local;
-					dxLocal = pointer_dx_local;
+					// dWidth = -pointer_dx_local already set
+					// dxLocal = pointer_dx_local already set
 				} else if (edges.right) {
-					dWidth = pointer_dx_local;
+					// dWidth = pointer_dx_local already set
 					dxLocal = 0;
 				}
 
 				if (edges.top) {
-					dHeight = -pointer_dy_local;
-					dyLocal = pointer_dy_local;
+					// dHeight = -pointer_dy_local already set
+					// dyLocal = pointer_dy_local already set
 				} else if (edges.bottom) {
-					dHeight = pointer_dy_local;
+					// dHeight = pointer_dy_local already set
 					dyLocal = 0;
+				}
+
+				if (event.shiftKey && selectedItem && selectedItem.width > 0 && selectedItem.height > 0) {
+					accentColour = 'green';
+					const aspectRatio = selectedItem.width / selectedItem.height;
+					const initial_dWidth = dWidth; // dWidth from non-shift logic
+					const initial_dHeight = dHeight; // dHeight from non-shift logic (will be 0 if horizontal, or vice-versa)
+
+					if (edges.left || edges.right) {
+						// Horizontal edge resize initiated
+						dWidth = initial_dWidth; // This is the primary change
+						dHeight = dWidth / aspectRatio;
+					} else if (edges.top || edges.bottom) {
+						// Vertical edge resize initiated
+						dHeight = initial_dHeight; // This is the primary change
+						dWidth = dHeight * aspectRatio;
+					}
+
+					// Adjust dxLocal, dyLocal for scaling from center
+					dxLocal = -dWidth / 2;
+					dyLocal = -dHeight / 2;
+				} else {
+					accentColour = 'blue';
 				}
 
 				// Rotate local translation back to global axes
@@ -245,7 +318,7 @@
 					}
 				},
 				modifiers: [
-					interact.modifiers.restrictSize({ min: { width: 20 / zoom, height: 20 / zoom } })
+					// interact.modifiers.restrictSize({ min: { width: 200 / zoom, height: 200 / zoom } })
 				],
 				inertia: false
 			});
@@ -316,14 +389,38 @@
 							if (newTargetRotationDeg < 0) newTargetRotationDeg += 360;
 
 							// Enhanced snap behavior with more common angles
-							const snapThreshold = 5;
+							const snapThreshold = 5; // Maintained for non-shift snapping
 							const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315];
-							const closestSnap = snapAngles.find(
-								(snap) => Math.abs((newTargetRotationDeg - snap + 360) % 360) < snapThreshold
-							);
 
-							if (closestSnap !== undefined) {
-								newTargetRotationDeg = closestSnap;
+							if (event.shiftKey) {
+								accentColour = 'red';
+								// If Shift is pressed, find the absolutely closest snap angle
+								let minAngularDifference = Infinity;
+								let closestSnapAngle = newTargetRotationDeg;
+
+								for (const angle of snapAngles) {
+									const diff = Math.abs(newTargetRotationDeg - angle);
+									// Consider wrap-around distance (e.g., 350deg is 10deg away from 0deg)
+									const angularDifference = Math.min(diff, 360 - diff);
+
+									if (angularDifference < minAngularDifference) {
+										minAngularDifference = angularDifference;
+										closestSnapAngle = angle;
+									}
+								}
+								newTargetRotationDeg = closestSnapAngle;
+							} else {
+								accentColour = 'blue';
+								// Snapping logic if Shift is NOT pressed, with improved diff calculation
+								const closestSnap = snapAngles.find((snap) => {
+									const diff = Math.abs(newTargetRotationDeg - snap);
+									const effectiveDiff = Math.min(diff, 360 - diff); // Correctly handles wrap-around
+									return effectiveDiff < snapThreshold;
+								});
+
+								if (closestSnap !== undefined) {
+									newTargetRotationDeg = closestSnap;
+								}
 							}
 
 							const actualDeltaRotation = newTargetRotationDeg - (selectedItem.rotation || 0);
@@ -390,6 +487,7 @@
 			if (resizeInteractable) resizeInteractable.unset();
 			if (dragInteractable) dragInteractable.unset();
 			if (rotateInteractable) rotateInteractable.unset();
+			accentColour = 'blue';
 		};
 	});
 </script>
@@ -412,7 +510,7 @@
 				left: -{handleSizeCanvas / 2}px;
 				cursor: nwse-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -428,7 +526,7 @@
 				left: calc(50% - {handleSizeCanvas / 2}px);
 				cursor: ns-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -444,7 +542,7 @@
 				right: -{handleSizeCanvas / 2}px;
 				cursor: nesw-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -460,7 +558,7 @@
 				left: -{handleSizeCanvas / 2}px;
 				cursor: ew-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -476,7 +574,7 @@
 				right: -{handleSizeCanvas / 2}px;
 				cursor: ew-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -492,7 +590,7 @@
 				left: -{handleSizeCanvas / 2}px;
 				cursor: nesw-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -508,7 +606,7 @@
 				left: calc(50% - {handleSizeCanvas / 2}px);
 				cursor: ns-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -524,7 +622,7 @@
 				right: -{handleSizeCanvas / 2}px;
 				cursor: nwse-resize;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				pointer-events: auto;
 				z-index: 10;
@@ -541,7 +639,7 @@
 				width: {handleSizeCanvas}px;
 				height: {handleSizeCanvas}px;
 				background-color: white;
-				border: 1px solid #007bff;
+				border: 1px solid ${accentColour};
 				border-radius: 50%;
 				cursor: grab;
 				pointer-events: auto;
@@ -553,7 +651,7 @@
 
 <style>
 	.resize-handle:hover {
-		background-color: #007bff;
+		background-color: accentColour;
 		border-color: white;
 	}
 
@@ -562,7 +660,7 @@
 	}
 
 	.rotate-handle:hover {
-		background-color: #007bff;
+		background-color: accentColour;
 		border-color: white;
 		cursor: grab;
 	}
