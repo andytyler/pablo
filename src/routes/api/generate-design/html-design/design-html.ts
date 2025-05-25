@@ -109,7 +109,7 @@ You MUST use the following attributes to position each element:
 
 # Frame
 You MUST include ALL the elements in the design concept, do not leave any out.
-The frame is transparent.
+The frame is transparent. you will see the previous generations as solid background if not set, consider a background.
 current Frame size: ${current_height}x${current_width}.
 You can change the frame size (in pixels) in the meta tag e.g. 
 You MUST always include the meta tag, even if missing or the same as the current design.
