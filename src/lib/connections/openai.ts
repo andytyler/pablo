@@ -108,7 +108,7 @@ export async function askGPTWithChatHistory<T>(
 ): Promise<string | T> {
 	try {
 		console.log(
-			'🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪 * START * [askGPTWithChatHistory] * 🟪🟪🟪🟪🟪🟪🟪'
+			'🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪 * START * [INPUT] * 🟪🟪🟪🟪🟪🟪🟪'
 		);
 		// log the first line of every message in the chat history and the role
 		chat_history_messages.forEach((message) => {
@@ -116,19 +116,19 @@ export async function askGPTWithChatHistory<T>(
 			message.content.forEach((content: OpenAI.ChatCompletionMessageParam) => {
 				if (typeof content.content === 'string') {
 					console.log(
-						`✨ [${message.style.toUpperCase()}] [${content.role}]  ${content.content.slice(0, 100)}`
+						`🧠 [${message.style.toUpperCase()}] [${content.role}]  ${content.content.slice(0, 100)}`
 					);
 				} else {
 					content.content?.forEach((item) => {
 						if (item.type === 'text') {
-							console.log(`✨ [${message.style.toUpperCase()}] [${content.role}]  ${item.text}`);
+							console.log(`🧠 [${message.style.toUpperCase()}] [${content.role}]  ${item.text}`);
 						} else if (item.type === 'image_url') {
 							console.log(
-								`✨ [${message.style.toUpperCase()}] [${content.role}]  ${item.image_url.url}`
+								`🧠 [${message.style.toUpperCase()}] [${content.role}]  ${item.image_url.url}`
 							);
 						} else {
 							console.log(
-								`✨ [${message.style.toUpperCase()}] [${content.role}]  ${JSON.stringify(item)}`
+								`🧠 [${message.style.toUpperCase()}] [${content.role}]  ${JSON.stringify(item)}`
 							);
 						}
 					});
@@ -137,7 +137,7 @@ export async function askGPTWithChatHistory<T>(
 		});
 
 		console.log(
-			'🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 * END * [askGPTWithChatHistory] * 🟩🟩🟩🟩🟩🟩🟩🟩'
+			'🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 * END * [INPUT] * 🟩🟩🟩🟩🟩🟩🟩🟩'
 		);
 
 		let messages_array = chat_history_messages.flatMap((message) => message.content);
@@ -152,18 +152,27 @@ export async function askGPTWithChatHistory<T>(
 			console.log('✨ [OPENAI] response', response);
 			return response.choices[0].message.parsed as T;
 		} else {
+			console.log(
+				`🟪 🟪 🟪 🟪 🟪 🟪 🟪  again  ${messages_array.length} 🟪 🟪 🟪 🟪 🟪 🟪 🟪 🟪 🟪 `
+			);
+			for (let i = 0; i < messages_array.length; i++) {
+				console.log(
+					`${i} [${messages_array[i].role?.toUpperCase()}] ${JSON.stringify(messages_array[i].content)}`
+				);
+			}
 			let response = await openai.chat.completions.create({
 				model: VISION_MODEL,
 				messages: messages_array,
+				// temperature: 1.4, // higher temperature means more creative, lower temperature means more precise
 				...options
 			});
-			console.log('♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️');
-			console.log(response);
-			console.log('♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️');
-			console.log('♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️');
+			console.log(
+				'♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️ *START* [OUTPUT] * ♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️'
+			);
 			console.log(response.choices[0].message.content);
-			console.log('♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️');
-			console.log('♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️');
+			console.log(
+				'♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️ * END * [OUTPUT] * ♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️♦️'
+			);
 			return response.choices[0].message.content as string;
 		}
 	} catch (error) {

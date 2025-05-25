@@ -289,12 +289,8 @@
 	<div
 		bind:this={htmlContainer}
 		id={frameStore.frame.id}
-		data-width={frameStore.frame.width}
-		data-height={frameStore.frame.height}
-		data-x={0}
-		data-y={0}
-		data-z-index={0}
-		class=" border-2 border-border bg-background shadow-lg"
+		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px;"
+		class={`border-2 border-border bg-background shadow-lg ${frameStore.isLoading ? 'relative overflow-hidden' : ''} ${frameStore.isLoading ? 'z-[101]' : 'z-0'}`}
 	>
 		{#if frameStore.isLoading}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
@@ -302,13 +298,9 @@
 	</div>
 {:else}
 	<div
-		class=" overflow-hidden border-2 border-dashed border-border bg-white shadow-lg"
 		id={frameStore.frame.id}
-		data-width={frameStore.frame.width}
-		data-height={frameStore.frame.height}
-		data-x={0}
-		data-y={0}
-		data-z-index={0}
+		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px;"
+		class="relative overflow-hidden border-2 border-dashed border-border bg-white shadow-lg"
 	>
 		{#if frameStore.isLoading}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />

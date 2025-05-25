@@ -62,7 +62,7 @@ export async function generateFrameDesign(
 	previous_design_html: string
 ): Promise<string> {
 	let new_chat_history_messages = [...chat_history_messages];
-	new_chat_history_messages.push({
+	let developer_prompt: ChatMessageWithMeta = {
 		id: 'system_prompt',
 		timestamp: new Date(),
 		style: 'system',
@@ -140,7 +140,7 @@ MUST respond with the WHOLE HTML including your edits. if you do not include an 
 				]
 			},
 			{
-				role: 'user',
+				role: 'assistant',
 				content: [
 					{
 						type: 'text',
@@ -159,18 +159,19 @@ ${previous_design_html}`
 				]
 			}
 		]
-	});
+	};
 
-	console.log('@CHECKPOINT desy', new_chat_history_messages.length);
-	for (let i = 0; i < new_chat_history_messages.length; i++) {
+	let constructed_history: ChatMessageWithMeta[] = [developer_prompt, ...new_chat_history_messages];
+
+	for (let i = 0; i < constructed_history.length; i++) {
 		console.log(
 			'@CHECKPOINT [FRAME DESIGN]:',
-			JSON.stringify(new_chat_history_messages[i].content).substring(0, 100)
+			JSON.stringify(constructed_history[i].content).substring(0, 100)
 		);
 	}
 
 	try {
-		const response = await askGPTWithChatHistory(new_chat_history_messages);
+		const response = await askGPTWithChatHistory(constructed_history);
 
 		console.log('🎨 [design-structured] response', response);
 		return response as string;
