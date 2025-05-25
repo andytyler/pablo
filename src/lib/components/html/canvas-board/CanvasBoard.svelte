@@ -90,11 +90,95 @@
 		})()
 	);
 
+	// Function to initialize a canvas item
+	function initializeCanvasItem(element: HTMLElement) {
+		// Store original styles before any modifications
+		if (!elementStyles.has(element)) {
+			const styles = new Set<string>();
+			Array.from(element.classList).forEach((cls) => {
+				if (
+					cls !== 'canvas-item' &&
+					cls !== 'selected' &&
+					!cls.startsWith('draggable-') &&
+					!cls.startsWith('interact-')
+				) {
+					styles.add(cls);
+				}
+			});
+			elementStyles.set(element, styles);
+		}
+
+		// Apply box-sizing first to ensure consistent dimension reading
+		element.style.boxSizing = 'border-box';
+
+		// Read positioning data from data attributes (set by AI-generated HTML)
+		const initialX = parseFloat(element.dataset.x || '0');
+		const initialY = parseFloat(element.dataset.y || '0');
+		const initialWidth = parseFloat(
+			element.dataset.width || element.offsetWidth.toString() || '100'
+		);
+		const initialHeight = parseFloat(
+			element.dataset.height || element.offsetHeight.toString() || '100'
+		);
+		const initialRotation = parseFloat(element.dataset.rotation || '0');
+		const initialZIndex = parseInt(element.dataset.zIndex || '0', 10);
+
+		// Apply canvas positioning system - convert data attributes to actual positioning
+		element.style.position = 'absolute';
+		element.style.left = '0';
+		element.style.top = '0';
+		element.style.width = `${initialWidth}px`;
+		element.style.height = `${initialHeight}px`;
+		element.style.transformOrigin = '0 0';
+		element.style.transform = `translate(${initialX}px, ${initialY}px) rotate(${initialRotation}deg)`;
+		element.style.zIndex = initialZIndex.toString();
+
+		// Ensure necessary interaction styles are set
+		element.style.touchAction = 'none';
+		element.style.userSelect = 'none';
+
+		// Preserve original classes while ensuring canvas-item is present
+		const storedStyles = elementStyles.get(element) || new Set();
+		let baseClasses = 'canvas-item';
+		storedStyles.forEach((s) => (baseClasses += ` ${s}`));
+		if (selectedItemsData.find((item) => item.element === element)) {
+			// Persist 'selected' if already selected
+			baseClasses += ' selected';
+		}
+		element.className = baseClasses.trim();
+	}
+
 	onMount(() => {
 		if (!browser || !containerElement || !canvasContentElement) {
 			console.warn('CanvasBoard onMount: Missing required elements or not in browser.');
 			return;
 		}
+
+		// Initialize existing items
+		const initialItems = canvasContentElement.querySelectorAll<HTMLElement>('.canvas-item');
+		initialItems.forEach(initializeCanvasItem);
+
+		// Observe for dynamically added items
+		const observer = new MutationObserver((mutationsList) => {
+			for (const mutation of mutationsList) {
+				if (mutation.type === 'childList') {
+					mutation.addedNodes.forEach((node) => {
+						if (node.nodeType === Node.ELEMENT_NODE) {
+							const elementNode = node as HTMLElement;
+							if (elementNode.matches && elementNode.matches('.canvas-item')) {
+								initializeCanvasItem(elementNode);
+							}
+							// Also check children if a wrapper was added
+							elementNode
+								.querySelectorAll<HTMLElement>('.canvas-item')
+								.forEach(initializeCanvasItem);
+						}
+					});
+				}
+			}
+		});
+
+		observer.observe(canvasContentElement, { childList: true, subtree: true });
 
 		// Add style update event listener
 		canvasContentElement.addEventListener('styleupdate', ((event: CustomEvent) => {
@@ -545,62 +629,8 @@
 		document.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('keyup', handleKeyUp);
 
-		// Initialize dynamic children
-		const interactiveItems = canvasContentElement.querySelectorAll<HTMLElement>('.canvas-item');
-		interactiveItems.forEach((element) => {
-			// Store original styles before any modifications
-			if (!elementStyles.has(element)) {
-				const styles = new Set<string>();
-				Array.from(element.classList).forEach((cls) => {
-					if (
-						cls !== 'canvas-item' &&
-						cls !== 'selected' &&
-						!cls.startsWith('draggable-') &&
-						!cls.startsWith('interact-')
-					) {
-						styles.add(cls);
-					}
-				});
-				elementStyles.set(element, styles);
-			}
-
-			// Apply box-sizing first to ensure consistent dimension reading
-			element.style.boxSizing = 'border-box';
-
-			// Read positioning data from data attributes (set by AI-generated HTML)
-			const initialX = parseFloat(element.dataset.x || '0');
-			const initialY = parseFloat(element.dataset.y || '0');
-			const initialWidth = parseFloat(
-				element.dataset.width || element.offsetWidth.toString() || '100'
-			);
-			const initialHeight = parseFloat(
-				element.dataset.height || element.offsetHeight.toString() || '100'
-			);
-			const initialRotation = parseFloat(element.dataset.rotation || '0');
-			const initialZIndex = parseInt(element.dataset.zIndex || '0', 10);
-
-			// Apply canvas positioning system - convert data attributes to actual positioning
-			element.style.position = 'absolute';
-			element.style.left = '0';
-			element.style.top = '0';
-			element.style.width = `${initialWidth}px`;
-			element.style.height = `${initialHeight}px`;
-			element.style.transformOrigin = '0 0';
-			element.style.transform = `translate(${initialX}px, ${initialY}px) rotate(${initialRotation}deg)`;
-			element.style.zIndex = initialZIndex.toString();
-
-			// Ensure necessary interaction styles are set
-			element.style.touchAction = 'none';
-			element.style.userSelect = 'none';
-
-			// Preserve original classes while ensuring canvas-item is present
-			const storedStyles = elementStyles.get(element) || new Set();
-			let baseClasses = 'canvas-item';
-			storedStyles.forEach((s) => (baseClasses += ` ${s}`));
-			element.className = baseClasses;
-		});
-
 		return () => {
+			observer.disconnect(); // Disconnect the observer on cleanup
 			if (panInteraction) panInteraction.unset();
 			if (itemsInteraction) itemsInteraction.unset();
 			if (containerElement) {

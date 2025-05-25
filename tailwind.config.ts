@@ -5,7 +5,31 @@ import { fontFamily } from 'tailwindcss/defaultTheme';
 const config: Config = {
 	darkMode: ['class'],
 	content: ['./src/**/*.{html,js,svelte,ts}'],
-	safelist: ['dark'],
+	safelist: [
+		'dark',
+		'filter',
+		{
+			pattern: /^font-/
+		},
+		{
+			pattern: /^text-/
+		},
+		{
+			pattern: /^drop-shadow-/
+		},
+		{
+			pattern: /^shadow-/
+		},
+		{
+			pattern: /^filter/
+		},
+		{
+			pattern: /^border-/
+		},
+		{
+			pattern: /^rounded-/
+		}
+	],
 	theme: {
 		container: {
 			center: true,

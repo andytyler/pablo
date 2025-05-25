@@ -4,7 +4,7 @@
 	import { frameStore, persistFrameStore } from '$lib/stores/frame-store.svelte';
 	import WaveAnimation from '../artboard/WaveAnimation.svelte';
 
-	let collectedSpanFontFamilies = $state(new Set<string>());
+	let collectedFontStyles = $state(new Map<string, Set<string>>());
 
 	// Function to extract dimensions from HTML
 	function extractDimensions(htmlString: string): { width?: number; height?: number } {
@@ -46,12 +46,15 @@
 	}
 
 	// Function to sanitize HTML and remove non-HTML elements
-	function sanitizeHtml(htmlString: string): { sanitizedString: string; fonts: Set<string> } {
-		if (!browser || !htmlString) return { sanitizedString: htmlString, fonts: new Set() };
+	function sanitizeHtml(htmlString: string): {
+		sanitizedString: string;
+		fonts: Map<string, Set<string>>;
+	} {
+		if (!browser || !htmlString) return { sanitizedString: htmlString, fonts: new Map() };
 
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(htmlString, 'text/html');
-		const localFonts = new Set<string>();
+		const localFontStyles = new Map<string, Set<string>>();
 
 		// Remove any script tags
 		const scripts = doc.getElementsByTagName('script');
@@ -98,6 +101,28 @@
 			if (zIndex !== undefined) styleString += `z-index: ${zIndex}; `;
 			if (rotation !== undefined) styleString += `transform: rotate(${rotation}deg); `;
 
+			const dataFontFamilyFromDataset = element.dataset.fontFamily;
+			if (dataFontFamilyFromDataset) {
+				const fontFamilyNameToApply = dataFontFamilyFromDataset.replace(/_/g, ' ');
+				if (styleString && !styleString.trim().endsWith(';') && styleString.trim() !== '') {
+					styleString += '; ';
+				}
+				styleString += `font-family: "${fontFamilyNameToApply}", sans-serif; `;
+			}
+
+			// Attempt to parse font-size from Tailwind-like classes (e.g., text-[48px])
+			const fontSizeClass = Array.from(element.classList).find((cls) => /^text-\[.*\]$/.test(cls));
+			if (fontSizeClass) {
+				const match = fontSizeClass.match(/^text-\[(.*)\]$/);
+				if (match && match[1]) {
+					const fontSizeValue = match[1];
+					if (styleString && !styleString.trim().endsWith(';') && styleString.trim() !== '') {
+						styleString += '; ';
+					}
+					styleString += `font-size: ${fontSizeValue}; `;
+				}
+			}
+
 			if (styleString) {
 				element.setAttribute('style', styleString.trim());
 			}
@@ -112,26 +137,49 @@
 			}
 			attributesToRemove.forEach((attrName) => element.removeAttribute(attrName));
 
-			if (element.tagName.toLowerCase() === 'span') {
+			if (element.getAttribute('data-font-family')) {
 				element.setAttribute('contenteditable', 'true');
 				const fontFamily = element.getAttribute('data-font-family');
 				if (fontFamily) {
-					localFonts.add(fontFamily);
-					console.log('fontFamily', fontFamily);
-					// add the correct font family to the class attribute as valid tailwind
-					// do not replace all the classes, just add the new one
+					if (!localFontStyles.has(fontFamily)) {
+						localFontStyles.set(fontFamily, new Set<string>());
+					}
+					const weights = localFontStyles.get(fontFamily)!;
+					weights.add('400'); // Add 400 as a default weight
 
-					const currentClasses = element.getAttribute('class') || '';
-					// replace font family string spaces with _
-					const fontFamilyString = fontFamily.replace(/ /g, '_');
-					element.setAttribute('class', `${currentClasses} font-[${fontFamilyString}]`);
+					// Tailwind font weight classes mapping
+					const tailwindWeightMap: Record<string, string> = {
+						'font-thin': '100',
+						'font-extralight': '200',
+						'font-light': '300',
+						'font-normal': '400',
+						'font-medium': '500',
+						'font-semibold': '600',
+						'font-bold': '700',
+						'font-extrabold': '800',
+						'font-black': '900'
+					};
+
+					element.classList.forEach((cls) => {
+						if (tailwindWeightMap[cls]) {
+							weights.add(tailwindWeightMap[cls]);
+						}
+					});
+
+					// Add font family to class for Tailwind JIT
+					const currentElementClasses = element.getAttribute('class') || '';
+					const fontFamilyClass = fontFamily.replace(/ /g, '_');
+					if (!currentElementClasses.includes(`font-[${fontFamilyClass}]`)) {
+						element.setAttribute('class', `${currentElementClasses} font-[${fontFamilyClass}]`);
+					}
+					console.log('fontFamily', fontFamily, 'weights', Array.from(weights));
 				}
 			} else {
 				element.setAttribute('contenteditable', 'false');
 			}
 		}
 
-		return { sanitizedString: doc.body.innerHTML, fonts: localFonts };
+		return { sanitizedString: doc.body.innerHTML, fonts: localFontStyles };
 	}
 
 	let htmlContainer = $state<HTMLDivElement | null>(null);
@@ -164,7 +212,7 @@
 			htmlContainer.innerHTML = sanitizedString || 'no content';
 
 			// Update collected fonts with the new set from current HTML
-			collectedSpanFontFamilies = new Set(fonts);
+			collectedFontStyles = new Map(fonts);
 
 			// Add event listener for blur events at the container level
 			htmlContainer.addEventListener('blur', handleContentEditableBlur, true);
@@ -175,18 +223,28 @@
 	});
 
 	let googleFontsLinkForSpans = $derived.by(() => {
-		if (!browser || collectedSpanFontFamilies.size === 0) {
+		if (!browser || collectedFontStyles.size === 0) {
 			return '';
 		}
-		const fontFamilies = Array.from(collectedSpanFontFamilies)
-			.map((font: string) => font.replace(/ /g, '+'))
-			.join('&family=');
-		if (!fontFamilies) return '';
-		console.log(
-			'fontFamilies',
-			`https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`
-		);
-		return `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
+		const familyParams: string[] = [];
+		for (const [family, weights] of collectedFontStyles) {
+			const familyName = family.replace(/ /g, '+');
+			if (weights.size > 0) {
+				const sortedWeights = Array.from(weights)
+					.map((w) => parseInt(w, 10))
+					.sort((a, b) => a - b);
+				familyParams.push(`${familyName}:wght@${sortedWeights.join(';')}`);
+			} else {
+				// Fallback: if no weights collected (should not happen due to default '400'),
+				// just request the family. Google Fonts defaults to 400.
+				familyParams.push(familyName);
+			}
+		}
+
+		if (familyParams.length === 0) return '';
+		const googleFontsUrl = `https://fonts.googleapis.com/css2?family=${familyParams.join('&family=')}&display=swap`;
+		console.log('fontFamilies URL', googleFontsUrl);
+		return googleFontsUrl;
 	});
 
 	async function processImagePrompts() {
