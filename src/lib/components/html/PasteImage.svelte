@@ -7,7 +7,7 @@
 	import { addMessageToFrameStore } from '$lib/stores/frame-messages-store.svelte';
 	import {
 		addImageToFrameStore,
-		frameStore,
+		images,
 		removeImageFromFrameStore
 	} from '$lib/stores/frame-store.svelte';
 	import Loader2 from 'lucide-svelte/icons/loader-2';
@@ -181,7 +181,7 @@
 	// Delete an image
 	async function deleteImage(id: string) {
 		try {
-			const imageToDelete = frameStore.images.uploaded.find((image) => image.id === id);
+			const imageToDelete = images.uploaded.find((image) => image.id === id);
 
 			if (!imageToDelete) {
 				console.error('Image to delete not found');
@@ -252,14 +252,12 @@
 		</div>
 	{/if}
 
-	{#if frameStore.images.uploaded?.length > 0}
+	{#if images.uploaded.length > 0}
 		<div class="mt-2">
-			<p class="mb-2 text-sm font-medium">
-				Uploaded Images ({frameStore.images.uploaded?.length})
-			</p>
+			<p class="mb-2 text-sm font-medium">Uploaded Images ({images.uploaded.length})</p>
 			<ScrollArea.Root class="h-[200px]">
 				<div class="grid grid-cols-3 gap-2 p-1 md:grid-cols-4">
-					{#each frameStore.images.uploaded as image}
+					{#each images.uploaded as image}
 						<Card class="relative overflow-hidden">
 							<img
 								src={image.url}

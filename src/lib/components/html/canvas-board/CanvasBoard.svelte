@@ -10,7 +10,6 @@
 	import { onMount } from 'svelte';
 	import SelectionBox from './SelectionBox.svelte';
 	import ZoomControls from './ZoomControls.svelte';
-	import ActionPanel from './panels/ActionPanel.svelte';
 
 	// Svelte 5 state variables for pan and zoom
 	let panX = $state(0);
@@ -466,7 +465,11 @@
 		const wheelListener = (event: WheelEvent) => {
 			if (!containerElement) return;
 			const targetElement = event.target as HTMLElement;
-			if (targetElement.closest('.selection-box') || targetElement.closest('.zoom-controls')) {
+			if (
+				targetElement.closest('.selection-box') ||
+				targetElement.closest('.zoom-controls') ||
+				targetElement.closest('.action-panel-container')
+			) {
 				return;
 			}
 			event.preventDefault();
@@ -828,8 +831,6 @@
 			handleStyleUpdate(element, styles);
 		}}
 	/> -->
-
-	<ActionPanel></ActionPanel>
 </div>
 
 <style>

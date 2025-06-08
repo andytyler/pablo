@@ -1,8 +1,14 @@
 <script lang="ts">
 	// import { imageEnrichedDesignJsonToHtml } from '$lib/connections/transformers'; // No longer needed directly here
 	import { browser } from '$app/environment';
-	import { frameStore, persistFrameStore } from '$lib/stores/frame-store.svelte';
-	import WaveAnimation from '../artboard/WaveAnimation.svelte';
+	import {
+		frame,
+		html as frameHtml,
+		isLoading,
+		persistFrameStore,
+		selected_element
+	} from '$lib/stores/frame-store.svelte';
+	import WaveAnimation from './canvas-board/WaveAnimation.svelte';
 
 	let collectedFontStyles = $state(new Map<string, Set<string>>());
 
@@ -35,10 +41,9 @@
 			if (newHtml !== lastProcessedHtml) {
 				lastProcessedHtml = newHtml;
 				// Update both raw and processed HTML
-				frameStore.html = {
-					raw: newHtml,
-					processed: newHtml
-				};
+				frameHtml.raw = newHtml;
+				frameHtml.processed = newHtml;
+
 				persistFrameStore(); // Persist the changes to localStorage
 				console.log('Store updated and persisted');
 			}
@@ -187,28 +192,23 @@
 
 	// Effect to handle frame dimensions updates
 	$effect(() => {
-		if (frameStore.html.raw) {
-			const dimensions = extractDimensions(frameStore.html.raw);
+		if (frameHtml.raw) {
+			const dimensions = extractDimensions(frameHtml.raw);
 			if (dimensions.height !== undefined) {
-				frameStore.frame.height = dimensions.height;
+				frame.height = dimensions.height;
 			}
 			if (dimensions.width !== undefined) {
-				frameStore.frame.width = dimensions.width;
+				frame.width = dimensions.width;
 			}
 		}
 	});
 
 	// Effect to update the HTML content and set up event listeners
 	$effect(() => {
-		if (
-			htmlContainer &&
-			browser &&
-			frameStore.html.raw &&
-			frameStore.html.raw !== lastProcessedHtml
-		) {
-			lastProcessedHtml = frameStore.html.raw;
+		if (htmlContainer && browser && frameHtml.raw && frameHtml.raw !== lastProcessedHtml) {
+			lastProcessedHtml = frameHtml.raw;
 
-			const { sanitizedString, fonts } = sanitizeHtml(frameStore.html.raw);
+			const { sanitizedString, fonts } = sanitizeHtml(frameHtml.raw);
 			htmlContainer.innerHTML = sanitizedString || 'no content';
 
 			// Update collected fonts with the new set from current HTML
@@ -336,21 +336,43 @@
 			if (newHtml !== lastProcessedHtml) {
 				lastProcessedHtml = newHtml;
 				// Update the store with the new HTML containing generated image URLs
-				frameStore.html = {
-					raw: newHtml,
-					processed: newHtml
-				};
+				frameHtml.raw = newHtml;
+				frameHtml.processed = newHtml;
 				persistFrameStore();
 				console.log('Image processing complete, store updated and persisted.');
 			}
 		}
 	}
 
+	function handleSelectionChange() {
+		if (!browser) return;
+		const selection = window.getSelection();
+		if (selection && selection.rangeCount > 0) {
+			let node: Node | null = selection.getRangeAt(0).startContainer;
+			// Traverse up to find the parent element that is a direct child of the container
+			while (node && node.parentElement !== htmlContainer) {
+				node = node.parentElement;
+			}
+			if (node && node instanceof HTMLElement) {
+				selected_element.value = node;
+				console.log('Selected element:', selected_element.value);
+			}
+		} else {
+			selected_element.value = null;
+		}
+	}
+
 	// Cleanup effect
 	$effect(() => {
+		if (browser) {
+			document.addEventListener('selectionchange', handleSelectionChange);
+		}
 		return () => {
 			if (htmlContainer) {
 				htmlContainer.removeEventListener('blur', handleContentEditableBlur, true);
+			}
+			if (browser) {
+				document.removeEventListener('selectionchange', handleSelectionChange);
 			}
 		};
 	});
@@ -364,24 +386,24 @@
 	{/if}
 </svelte:head>
 
-{#if frameStore.html.raw}
+{#if frameHtml.raw}
 	<div
 		bind:this={htmlContainer}
-		id={frameStore.frame.id}
-		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px;"
-		class={`border-2 border-border bg-background shadow-lg ${frameStore.isLoading ? 'relative overflow-hidden' : ''} ${frameStore.isLoading ? 'z-[101]' : 'z-0'}`}
+		id={frame.id}
+		style="width: {frame.width}px; height: {frame.height}px;"
+		class={`border-2 border-border bg-background shadow-lg ${isLoading.value ? 'relative overflow-hidden' : ''} ${isLoading.value ? 'z-[101]' : 'z-0'}`}
 	>
-		{#if frameStore.isLoading}
+		{#if isLoading.value}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
 		{/if}
 	</div>
 {:else}
 	<div
-		id={frameStore.frame.id}
-		style="width: {frameStore.frame.width}px; height: {frameStore.frame.height}px;"
+		id={frame.id}
+		style="width: {frame.width}px; height: {frame.height}px;"
 		class="relative overflow-hidden rounded-sm border-2 border-border bg-background shadow-lg"
 	>
-		{#if frameStore.isLoading}
+		{#if isLoading.value}
 			<WaveAnimation variant="loading" backdropBlur={10} animationSpeed={5} />
 		{:else}
 			<WaveAnimation variant="waiting" backdropBlur={10} animationSpeed={30} />

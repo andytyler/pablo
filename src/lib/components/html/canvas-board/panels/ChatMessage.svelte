@@ -225,7 +225,7 @@
 								<img
 									class="h-auto w-48 max-w-full object-cover"
 									src={content.image_url.url}
-									alt="User shared image"
+									alt="User shared"
 								/>
 							</div>
 						{/if}
