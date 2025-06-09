@@ -131,6 +131,7 @@ use the 'data-prompt' attribute to describe the image, this is the prompt for th
 <img data-prompt="a picture of a labrador puppy sitting with its tounge out" data-remove-bg="true" />
 <img data-prompt="a beautiful sunset over a calm ocean with a small boat in the foreground" data-remove-bg="false" />
 
+To use an existing image you know of just set data-generated="true" and src="the url of the image" like any other image.
 
 
 Included is the current design as an image and the following is the current design in HTML format.

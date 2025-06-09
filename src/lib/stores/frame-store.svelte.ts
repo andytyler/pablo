@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { addMessageToFrameStore } from './frame-messages-store.svelte';
 
 // Define image item structure
 export type ImageItem = {
@@ -83,6 +84,24 @@ export function addImageToFrameStore(type: 'uploaded' | 'generated', imageItem: 
 		images.generated.push(imageItem);
 	}
 	images.all.push(imageItem);
+	addMessageToFrameStore('image', [
+		{
+			role: 'user',
+			content: [{ type: 'image_url', image_url: { url: imageItem.url, detail: 'high' } }]
+		}
+	]);
+	addMessageToFrameStore('assistant', [
+		{
+			role: 'assistant',
+			content: [
+				{
+					type: 'text',
+					text: `Above is a generated image, ID: ${imageItem.id}, Image generated for prompt "${imageItem.description}", URL: ${imageItem.url}`
+				}
+			]
+		}
+	]);
+
 	persistFrameStore();
 }
 

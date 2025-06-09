@@ -2,6 +2,7 @@
 	// import { imageEnrichedDesignJsonToHtml } from '$lib/connections/transformers'; // No longer needed directly here
 	import { browser } from '$app/environment';
 	import {
+		addImageToFrameStore,
 		frame,
 		html as frameHtml,
 		isLoading,
@@ -268,6 +269,9 @@
 					img.removeAttribute('data-prompt'); // Invalid prompt, remove attribute
 					return;
 				}
+				if (img.dataset.generated === 'true') {
+					return;
+				}
 
 				img.setAttribute('data-generating', 'true');
 				const imgId = img.id || `img_gen_${Math.random().toString(36).substring(2, 10)}`;
@@ -314,6 +318,12 @@
 						img.alt = prompt; // Set alt text from prompt
 						htmlChanged = true;
 						console.log(`Image generated for prompt "${prompt}": ${result.image_url}`);
+						//add image to the image store
+						addImageToFrameStore('generated', {
+							id: imgId,
+							url: result.image_url,
+							description: prompt
+						});
 					} else {
 						console.error(
 							`Image generation API call did not return success or URL for prompt "${prompt}"`,
