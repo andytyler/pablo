@@ -610,27 +610,22 @@
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key === ' ' || event.code === 'Space') {
 				isSpacebarDown = true;
-				// Potentially update cursor here to indicate panning mode
-				if (containerElement && !isPanning) {
-					// Only change if not already in a pan (e.g. via interactjs starting one)
-					// and panInteraction is defined
-					if (panInteraction) panInteraction.draggable({ enabled: true });
-				}
 			}
 		};
 		const handleKeyUp = (event: KeyboardEvent) => {
 			if (event.key === ' ' || event.code === 'Space') {
 				isSpacebarDown = false;
-				// Potentially revert cursor here
-				// and panInteraction is defined
-				if (panInteraction && !isPanning) {
-					// if not in middle of a pan action initiated by space
-					panInteraction.draggable({ enabled: false });
-				}
 			}
 		};
 		document.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('keyup', handleKeyUp);
+
+		// Make panning activation reactive to isSpacebarDown
+		$effect(() => {
+			if (panInteraction && containerElement && !isPanning) {
+				panInteraction.draggable({ enabled: isSpacebarDown });
+			}
+		});
 
 		return () => {
 			observer.disconnect(); // Disconnect the observer on cleanup
@@ -822,6 +817,7 @@
 		defaultZoom={1}
 		defaultPanX={0}
 		defaultPanY={0}
+		bind:isSpacebarDown
 	/>
 
 	<!-- <AttributeEditorPanel

@@ -34,8 +34,10 @@
 				<div class="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
 					<Send class="h-6 w-6 rotate-[15deg] text-primary" />
 				</div>
-				<p class="text-xl font-medium text-white/90">Let's create something amazing</p>
-				<p class="mt-2 text-base text-white/60">Describe your design and I'll bring it to life</p>
+				<p class="text-xl font-medium text-foreground">Let's create something amazing</p>
+				<p class="mt-2 text-base text-muted-foreground">
+					Describe your design and I'll bring it to life
+				</p>
 			</div>
 		{:else}
 			{#each frame_chat_messages.messages.flat() as message (message.id)}
@@ -54,7 +56,7 @@
 							<div class="h-5 w-5 rounded-full bg-muted"></div>
 						</div>
 					</div>
-					<span class="text-sm text-white/60">Generating your design...</span>
+					<span class="text-sm text-muted-foreground">Generating your design...</span>
 				</div>
 			</div>
 		{/if}

@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { Minus, Plus, RotateCcw } from 'lucide-svelte';
+	import {
+		TooltipContent,
+		TooltipProvider,
+		Root as TooltipRoot,
+		TooltipTrigger
+	} from '$lib/components/ui/tooltip';
+	import { Hand, Minus, Plus, RotateCcw } from 'lucide-svelte';
 
 	type Props = {
 		zoom: number;
@@ -12,6 +18,7 @@
 		defaultPanX?: number;
 		defaultPanY?: number;
 		zoomFactor?: number;
+		isSpacebarDown?: boolean;
 	};
 
 	// Props that will be bound to the parent's state
@@ -24,7 +31,8 @@
 		defaultZoom = $bindable(1),
 		defaultPanX = $bindable(0),
 		defaultPanY = $bindable(0),
-		zoomFactor = 1.2
+		zoomFactor = 1.2,
+		isSpacebarDown = $bindable(false)
 	}: Props = $props();
 
 	// Derived state for display
@@ -42,6 +50,10 @@
 		zoom = defaultZoom;
 		panX = defaultPanX;
 		panY = defaultPanY;
+	}
+
+	function handleTogglePanning() {
+		isSpacebarDown = !isSpacebarDown;
 	}
 </script>
 
@@ -61,4 +73,24 @@
 	<Button variant="outline" size="icon" onclick={handleResetView} aria-label="Reset View"
 		><RotateCcw class="w-4" /></Button
 	>
+	<TooltipProvider>
+		<TooltipRoot>
+			<TooltipTrigger>
+				<Button
+					variant={isSpacebarDown ? 'default' : 'outline'}
+					size="icon"
+					onclick={handleTogglePanning}
+					aria-label="Toggle Panning"
+				>
+					<Hand class="w-4" />
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>
+				<div class="flex flex-col gap-1 text-xs">
+					<span class="font-bold">Toggle panning</span>
+					<span class="text-muted-foreground">Tip: hold spacebar to pan</span>
+				</div>
+			</TooltipContent>
+		</TooltipRoot>
+	</TooltipProvider>
 </div>

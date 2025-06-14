@@ -37,11 +37,9 @@
 			if (promptTextarea) {
 				promptTextarea.focus();
 				promptTextarea.addEventListener('keydown', function (e) {
-					if (!(e.key === 'Enter' && (e.metaKey || e.ctrlKey))) return;
-
-					if (e.target && 'form' in e.target) {
-						const formElement = e.target.form as HTMLFormElement;
-						formElement?.submit();
+					if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+						e.preventDefault();
+						handleSubmit();
 					}
 				});
 			}
@@ -172,22 +170,23 @@
 	<div class="relative w-full">
 		<Textarea
 			id="prompt-textarea"
-			class="max-h-40 min-h-24 w-full resize-y overflow-y-auto rounded-lg border border-border bg-card  p-2 pr-14 text-sm text-white/90 outline-none placeholder:text-white/40"
+			class="max-h-40 min-h-24 w-full resize-y overflow-y-auto rounded-lg border border-border bg-card  p-2 pr-14 text-sm text-foreground outline-none placeholder:text-foreground/60"
 			placeholder="Imagine Anything..."
 			bind:value={user_input}
 			disabled={isLoading.value}
 		/>
 		<Button
-			class="absolute bottom-3 right-3 h-6 rounded-lg bg-primary px-1 transition-colors duration-200 hover:bg-accent"
+			class="absolute bottom-3 right-3 h-6 rounded-lg bg-primary px-1 text-primary-foreground transition-colors  duration-200 hover:bg-accent hover:text-accent-foreground"
 			type="submit"
 			size="sm"
 			variant="outline"
 			disabled={isLoading.value || !user_input.trim()}
 		>
 			{#if isLoading.value}
-				<Loader2 class="h-4 w-4 animate-spin text-white" />
+				<Loader2 class="h-3 w-3 animate-spin  " />
 			{:else}
-				<Send class="h-4 w-4 text-white" /> Send
+				<Send class="h-3 w-3 " />
+				Send
 			{/if}
 		</Button>
 	</div>
@@ -202,12 +201,12 @@
 			/>
 			<label
 				for="concept-toggle"
-				class="flex h-full items-center gap-2.5 text-xs font-medium leading-none text-white"
+				class="flex h-full items-center gap-2.5 text-xs font-medium leading-none text-foreground"
 			>
 				{#if chat_settings.skip_concept}
 					<div class="flex items-center gap-1 rounded-md bg-accent px-1.5 py-1">
-						<Lightbulb class="h-4 w-4 text-accent-foreground" />
-						<span class="text-accent-foreground">Concept ON</span>
+						<Lightbulb class="h-4 w-4 text-foreground" />
+						<span class="text-foreground">Concept ON</span>
 					</div>
 				{:else}
 					<Ban class="h-4 w-4 text-muted" />
@@ -226,7 +225,7 @@
 			}}
 		>
 			<Trash2 class="h-4 w-4" />
-			Clear Chat
+			Delete Design
 		</Button>
 	</div>
 </form>

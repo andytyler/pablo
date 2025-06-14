@@ -19,7 +19,7 @@
 </script>
 
 <div
-	class="action-panel-container absolute right-5 top-5 z-50 h-[95%] max-h-[95%] w-[420px] overflow-hidden rounded-lg bg-card/80 shadow-xl backdrop-blur-md"
+	class="action-panel-container absolute right-5 top-5 z-50 h-[95%] max-h-[95%] w-[420px] overflow-hidden rounded-lg bg-card/50 shadow-xl backdrop-blur-md"
 >
 	<div class="flex h-full w-full flex-col overflow-hidden">
 		<Tabs.Root value="assistant" class="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
@@ -124,7 +124,7 @@
 					<div class="flex min-h-0 flex-1 flex-col p-0">
 						<ChatMessages />
 					</div>
-					<div class=" flex h-48 w-full flex-none items-start justify-start p-2 pt-0">
+					<div class=" flex min-h-48 w-full items-start justify-start p-2 pt-0">
 						<ChatPane />
 					</div>
 				</div>

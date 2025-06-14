@@ -6,10 +6,9 @@ export const site_config = {
 	image: 'https://dreamsurf.ai/og-image.png',
 	keywords: ['pablo', 'ai', 'design', 'text-to-image', 'generative ai', 'graphic design'],
 	socials: {
-		twitter: 'https://twitter.com/dreamsurfai',
-		github: 'https://github.com/dreamsurfai',
-		linkedin: 'https://linkedin.com/in/dreamsurfai',
-		instagram: 'https://instagram.com/dreamsurfai'
+		twitter: 'https://twitter.com/andy_ajt',
+		github: 'https://github.com/andytyler',
+		linkedin: 'https://linkedin.com/in/andrewjtyler'
 	},
 	contact: {
 		email: 'hello@dreamsurf.ai',
